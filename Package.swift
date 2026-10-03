@@ -11,5 +11,6 @@ let package = Package(
         .executableTarget(name: "devmon-snapshot", dependencies: ["DevMonitorUI"]),
         .executableTarget(name: "devmon-dump", dependencies: ["DevMonitorCore"]),
         .testTarget(name: "DevMonitorCoreTests", dependencies: ["DevMonitorCore"]),
+        .testTarget(name: "DevMonitorUITests", dependencies: ["DevMonitorUI"]),
     ]
 )

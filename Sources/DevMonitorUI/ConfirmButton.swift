@@ -3,7 +3,7 @@ import SwiftUI
 /// A button that asks for a second click before running its action.
 struct ConfirmButton: View {
     let title: String
-    /// When set, the button rests as this icon alone and shows the confirm label over it once clicked.
+    /// When set, the button rests as this icon alone and shows a confirm button over the line once clicked.
     var systemImage: String?
     /// Runs on the first click, to record what the second click will confirm.
     var onArm: () -> Void = {}
@@ -11,27 +11,26 @@ struct ConfirmButton: View {
     @State private var isArmed = false
 
     var body: some View {
-        Button {
-            if isArmed {
-                isArmed = false
-                action()
-            } else {
-                arm()
-            }
-        } label: {
+        Group {
             if let systemImage {
-                // The icon keeps its place and the confirm label is drawn over it, growing to the left:
-                // the line never shifts and the label opens under the pointer.
-                Image(systemName: systemImage).foregroundStyle(.secondary).opacity(isArmed ? 0 : 1)
+                // The icon keeps its place. The confirm label is a button of its own laid over the line, growing
+                // to the left of the icon: the line never shifts, the label opens under the pointer, and all of
+                // it can be clicked. Drawn inside the icon's label, only the icon's own area would react.
+                Button(action: arm) { Image(systemName: systemImage).foregroundStyle(.secondary) }
+                    .opacity(isArmed ? 0 : 1)
                     .overlay(alignment: .trailing) {
-                        if isArmed { pill(Text(Strings.confirm)).fixedSize() }
+                        if isArmed { Button(action: confirm) { pill(Text(Strings.confirm)) }.fixedSize() }
                     }
             } else {
-                // Both labels are laid out so the button keeps one width and its neighbours never move.
-                pill(ZStack {
-                    Text(title).opacity(isArmed ? 0 : 1)
-                    Text(Strings.confirm).opacity(isArmed ? 1 : 0)
-                })
+                Button {
+                    if isArmed { confirm() } else { arm() }
+                } label: {
+                    // Both labels are laid out so the button keeps one width and its neighbours never move.
+                    pill(ZStack {
+                        Text(title).opacity(isArmed ? 0 : 1)
+                        Text(Strings.confirm).opacity(isArmed ? 1 : 0)
+                    })
+                }
             }
         }
         .buttonStyle(.plain)
@@ -58,5 +57,12 @@ struct ConfirmButton: View {
             try? await Task.sleep(for: .seconds(3))
             isArmed = false
         }
+    }
+
+    /// Runs the action and returns to the resting state.
+    /// @example confirm()
+    private func confirm() {
+        isArmed = false
+        action()
     }
 }
