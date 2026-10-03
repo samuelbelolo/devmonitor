@@ -5,6 +5,7 @@ import Foundation
 actor MonitorScanner {
     private let resolver = RepoResolver()
     private var tracker = IdleTracker()
+    private var workTracker = WorkTracker()
     private var cacheClearedAt = Date()
     /// Seconds a resolved directory is trusted before it is looked up again.
     private static let cacheLifetime: TimeInterval = 300
@@ -24,6 +25,8 @@ actor MonitorScanner {
             idleSeconds[service.id] = tracker.record(service, at: now)
         }
         tracker.prune(keeping: Set(services.map(\.id)))
-        return ScanResult(groups: scan.groups, idleSeconds: idleSeconds, processIdentities: scan.processIdentities)
+        return ScanResult(
+            groups: scan.groups, idleSeconds: idleSeconds, agentSessions: scan.agentSessions,
+            workingSessions: workTracker.record(scan.agentSessions, at: now), processIdentities: scan.processIdentities)
     }
 }

@@ -16,4 +16,7 @@ for group in scan.groups {
         print("  docker  \(container.name)  \(DisplayFormat.memory(container.memoryBytes))")
     }
 }
+for session in scan.agentSessions {
+    print("agent  \(session.process.pid)  \(session.agent.displayName)  \(session.version?.text ?? "?")  [\(session.location?.name ?? "outside any project")]")
+}
 print(String(format: "scan: %d process, %.0f ms", scan.processIdentities.count, Date().timeIntervalSince(started) * 1000))

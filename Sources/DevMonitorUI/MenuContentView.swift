@@ -49,8 +49,8 @@ public struct MenuContentView: View {
         .font(.system(size: 12.5))
         .padding(14)
         .frame(width: 400)
-        .onAppear { store.isWindowVisible = true }
-        .onDisappear { store.isWindowVisible = false }
+        .onAppear { store.setWindow(.memory, isOpen: true) }
+        .onDisappear { store.setWindow(.memory, isOpen: false) }
     }
 
     private var settingsMenu: some View {

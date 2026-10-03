@@ -2,18 +2,27 @@ import AppKit
 import DevMonitorUI
 import SwiftUI
 
-// Renders the menu bar window to a PNG from two real scans, to review the layout without opening the app.
-let output = CommandLine.arguments.dropFirst().first ?? "snapshot.png"
+// Renders a window of the app to a PNG from real scans, to review the layout without opening the app.
+// Usage: devmon-snapshot out.png [memory|agents]
+let arguments = Array(CommandLine.arguments.dropFirst())
+let output = arguments.first ?? "snapshot.png"
+let showsAgents = arguments.dropFirst().first == "agents"
 
-/// Draws the menu window off screen from live data and writes it as a PNG.
+/// Draws the chosen window off screen from live data and writes it as a PNG.
 /// @example await render(to: "snapshot.png")
 @MainActor
 func render(to path: String) async {
     let store = MonitorStore()
+    let versions = VersionStore()
+    // Two scans at least, so the working state of the agent sessions is known.
     try? await Task.sleep(for: .seconds(9))
     await store.refresh()
+    await versions.refresh()
+    let content: AnyView = showsAgents
+        ? AnyView(AgentsContentView(agent: .claude).agentEnvironment(store: store, versions: versions))
+        : AnyView(MenuContentView().environmentObject(store))
     // Sized the way MenuBarExtra sizes its window: from the content's preferred size, not its fitting size.
-    let controller = NSHostingController(rootView: MenuContentView().environmentObject(store).background(Color(nsColor: .windowBackgroundColor)))
+    let controller = NSHostingController(rootView: content.background(Color(nsColor: .windowBackgroundColor)))
     controller.sizingOptions = [.preferredContentSize]
     let window = NSWindow(contentViewController: controller)
     window.styleMask = [.borderless]

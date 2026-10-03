@@ -49,4 +49,48 @@ enum Strings {
     static func stopIdle(count: Int, memory: String) -> String {
         french ? "Arrêter \(count) au repos · libère \(memory)" : "Stop \(count) idle · frees \(memory)"
     }
+
+    static let byProject = french ? "Par projet" : "By project"
+    static let versions = "Versions"
+    static let outsideProjects = french ? "Hors projet" : "Outside any project"
+    static let working = french ? "travaille" : "working"
+    static let waiting = french ? "attend" : "waiting"
+    static let upToDate = french ? "à jour" : "up to date"
+    static let versionUnreadable = french ? "version illisible" : "version unreadable"
+    static let latestUnknown = french ? "dernière version inconnue" : "latest version unknown"
+    static let copy = french ? "Copier" : "Copy"
+    static let copied = french ? "Copié" : "Copied"
+    static let noAgent = french ? "Aucun agent installé." : "No coding agent installed."
+    static let checkVersions = french ? "Vérifier les nouvelles versions" : "Check for new versions"
+    static let animateLogo = french ? "Animer le logo quand un agent travaille" : "Animate the logo while an agent works"
+
+    /// Returns the caption next to the number of sessions.
+    /// @example Strings.sessionsCaption(working: 3) // "agent sessions · 3 working"
+    static func sessionsCaption(working: Int) -> String {
+        let busy = working == 0
+            ? (french ? "toutes en attente" : "all waiting")
+            : (french ? "\(working) travaille\(working > 1 ? "nt" : "")" : "\(working) working")
+        return (french ? "sessions d'agent · " : "agent sessions · ") + busy
+    }
+
+    /// Returns the count of open sessions of one agent.
+    /// @example Strings.openSessions(8) // "8 open sessions"
+    static func openSessions(_ count: Int) -> String {
+        if count == 0 { return french ? "aucune session" : "no session" }
+        return french ? "\(count) session\(count > 1 ? "s" : "") ouverte\(count > 1 ? "s" : "")" : "\(count) open session\(count > 1 ? "s" : "")"
+    }
+
+    /// Returns the tag of an agent with a newer version published.
+    /// @example Strings.available("2.1.291") // "2.1.291 available"
+    static func available(_ version: String) -> String {
+        french ? "\(version) disponible" : "\(version) available"
+    }
+
+    /// Returns the note on sessions that still run an older version than the installed one.
+    /// @example Strings.toRestart(1, oldest: "2.1.287") // "1 session on 2.1.287 · restart to update"
+    static func toRestart(_ count: Int, oldest: String) -> String {
+        french
+            ? "\(count) session\(count > 1 ? "s" : "") en \(oldest) · à relancer"
+            : "\(count) session\(count > 1 ? "s" : "") on \(oldest) · restart to update"
+    }
 }

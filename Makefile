@@ -25,8 +25,8 @@ test: ## Run the tests
 dump: ## Print in the terminal what the app would show
 	@swift run devmon-dump
 
-snapshot: ## Render the app window to build/snapshot.png
-	@mkdir -p build && swift run devmon-snapshot build/snapshot.png && open build/snapshot.png
+snapshot: ## Render the memory and agents windows to build/
+	@mkdir -p build && swift run devmon-snapshot build/snapshot.png && swift run devmon-snapshot build/agents.png agents && open build/snapshot.png build/agents.png
 
 clean: ## Remove build output
 	@rm -rf .build build

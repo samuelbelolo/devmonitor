@@ -1,6 +1,7 @@
 import Foundation
 
 /// A coding agent whose sessions the monitor recognises and never signals.
+/// A new case also needs its menu bar item, listed by hand in `DevMonitorApp.body`.
 public enum Agent: String, CaseIterable, Equatable, Sendable {
     case claude
     case codex
@@ -24,7 +25,7 @@ public enum Agent: String, CaseIterable, Equatable, Sendable {
     }
 
     /// The command name of the agent, as an executable or a script.
-    private var command: String {
+    var command: String {
         self == .cursorAgent ? "cursor-agent" : rawValue
     }
 
@@ -47,13 +48,18 @@ public enum Agent: String, CaseIterable, Equatable, Sendable {
     public static func running(_ process: ProcessSnapshot) -> Agent? {
         let name = process.name
         let argv0 = ((process.arguments.first ?? "") as NSString).lastPathComponent
-        // Framework Python runs as "Python", hence the lowercase comparison.
-        let interprets = interpreters.contains(name) || name.lowercased().hasPrefix("python")
-        let script = interprets ? process.arguments.dropFirst().first { !$0.hasPrefix("-") } : nil
+        let script = interprets(process) ? process.arguments.dropFirst().first { !$0.hasPrefix("-") } : nil
         let scriptName = script.map { (($0 as NSString).lastPathComponent as NSString).deletingPathExtension }
         return allCases.first { agent in
             name == agent.command || argv0 == agent.command || scriptName == agent.command
                 || agent.packagePaths.contains { process.executablePath.contains($0) || script?.contains($0) == true }
         }
+    }
+
+    /// Whether a process is an interpreter running a script: node, bun, deno or Python. Framework Python runs as
+    /// "Python", hence the lowercase comparison.
+    /// @example Agent.interprets(nodeRunningCodexJs) // true
+    static func interprets(_ process: ProcessSnapshot) -> Bool {
+        interpreters.contains(process.name) || process.name.lowercased().hasPrefix("python")
     }
 }

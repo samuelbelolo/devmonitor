@@ -1,17 +1,24 @@
 import DevMonitorCore
 import Foundation
 
-/// The state shown by the menu bar window, refreshed on a timer.
+/// The state the menu bar items and their windows show, refreshed on a timer: the projects and their memory,
+/// and the coding agent sessions.
 @MainActor
 public final class MonitorStore: ObservableObject {
     @Published private(set) var groups: [ProjectGroup] = []
     /// How many seconds each idle service has done nothing, by service id.
     @Published private(set) var idleSeconds: [String: Int] = [:]
+    /// The coding agent sessions running, and the ids of those that worked during the last scan interval.
+    @Published private(set) var agentSessions: [AgentSession] = []
+    @Published private(set) var workingSessions: Set<String> = []
     /// When each process was asked to stop; 5 s later, a row whose processes are still alive offers to force them.
     @Published private(set) var stopRequests = StopRequests()
-    /// Whether the menu window is open: the refresh loops restart at the matching pace when it changes.
-    @Published public var isWindowVisible = false { didSet { if isWindowVisible != oldValue { startLoops() } } }
+    /// The windows open right now; while one is, the refresh loops run at their faster pace.
+    private var openWindows: Set<AppWindow> = [] { didSet { if openWindows.isEmpty != oldValue.isEmpty { startLoops() } } }
+    private var isWindowVisible: Bool { !openWindows.isEmpty }
 
+    /// Turns the logo of the working agents; it ticks only while a session works.
+    public let clock = GlyphClock()
     private let scanner = MonitorScanner()
     private var containers: [DockerContainer] = []
     /// Containers a stop was requested for: hidden until Docker has answered.
@@ -27,6 +34,27 @@ public final class MonitorStore: ObservableObject {
     }
 
     public var totalBytes: UInt64 { groups.reduce(0) { $0 + $1.memoryBytes } }
+
+    /// Records that one of the app's windows opened or closed.
+    /// @example store.setWindow(.agent(.claude), isOpen: true)
+    public func setWindow(_ window: AppWindow, isOpen: Bool) {
+        if isOpen { openWindows.insert(window) } else { openWindows.remove(window) }
+    }
+
+    /// How many agent sessions worked during the last scan interval.
+    var workingCount: Int { workingSessions.count }
+
+    /// The sessions of one agent.
+    /// @example store.sessions(of: .claude).count // 8
+    public func sessions(of agent: Agent) -> [AgentSession] {
+        agentSessions.filter { $0.agent == agent }
+    }
+
+    /// Whether a session of this agent worked during the last scan interval.
+    /// @example store.isWorking(.claude) // true
+    public func isWorking(_ agent: Agent) -> Bool {
+        sessions(of: agent).contains { workingSessions.contains($0.id) }
+    }
 
     /// The project services that have used no CPU for ten minutes. MCP servers and agent tools are never part of it.
     var idleServices: [Service] {
@@ -51,6 +79,9 @@ public final class MonitorStore: ObservableObject {
         let result = await scanner.scan(containers: containers.filter { !stoppingContainers.contains($0.id) })
         groups = result.groups
         idleSeconds = result.idleSeconds
+        agentSessions = result.agentSessions
+        workingSessions = result.workingSessions
+        clock.update(hasWork: !workingSessions.isEmpty)
         stopRequests.prune(keeping: result.processIdentities)
     }
 

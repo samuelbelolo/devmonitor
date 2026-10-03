@@ -14,6 +14,7 @@ final class ProjectScanTests: XCTestCase {
         XCTAssertEqual(scan.groups.map(\.kind), [.project, .mcpServers])
         XCTAssertEqual(scan.groups[0].services.map(\.root.pid), [40])
         XCTAssertEqual(scan.groups[0].containers.map(\.name), ["repo-cache-1"])
+        XCTAssertEqual(scan.agentSessions.map(\.agent), [.claude])
         XCTAssertEqual(scan.processIdentities, ["10-100", "20-100", "30-100", "40-100", "50-100", "60-100"])
     }
 }

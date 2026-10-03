@@ -33,8 +33,8 @@ SOFTWARE.
 
 ## Logos
 
-The logos embedded in `Sources/DevMonitorUI/BrandIcon.swift` (Docker, Claude, OpenAI, Model
-Context Protocol, Node.js, Python, Bun, Deno) were sourced from
+The logos embedded in `Sources/DevMonitorUI/BrandIcon.swift` (Docker, Claude, OpenAI, Cursor,
+Google Gemini, Model Context Protocol, Node.js, Python, Bun, Deno) were sourced from
 [Simple Icons](https://simpleicons.org). Each logo is the property of its owner and subject to
 that owner's brand terms; the licence of Simple Icons covers that project, not the marks
 themselves. They are used only to identify the tool a row belongs to. DevMonitor is not

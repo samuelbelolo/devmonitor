@@ -48,19 +48,6 @@ public enum DockerCLI {
     /// @example run(["ps", "-q"], socket: "/var/run/docker.sock", timeout: 10) // "abc123\n"
     private static func run(_ arguments: [String], socket: String, timeout: TimeInterval) -> String? {
         guard let executable = executables.first(where: FileManager.default.isExecutableFile) else { return nil }
-        let process = Process()
-        let output = Pipe()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = ["-H", "unix://" + socket] + arguments
-        process.standardInput = FileHandle.nullDevice
-        process.standardOutput = output
-        process.standardError = FileHandle.nullDevice
-        guard (try? process.run()) != nil else { return nil }
-        let deadline = DispatchWorkItem { if process.isRunning { process.terminate() } }
-        DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: deadline)
-        let data = output.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        deadline.cancel()
-        return process.terminationStatus == 0 ? String(decoding: data, as: UTF8.self) : nil
+        return CommandRunner.run(executable, ["-H", "unix://" + socket] + arguments, timeout: timeout)
     }
 }
