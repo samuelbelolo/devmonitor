@@ -1,0 +1,21 @@
+# Swift build output
+.build/
+build/
+*.xcodeproj/
+.swiftpm/
+
+# macOS
+.DS_Store
+
+# Local token for the plan preview bridge
+.plan-url
+
+# Working notes that describe the author's own machine (paths, project names, pids)
+plans/
+docs/research/
+
+# Launch video workspace (plan, share copy, frames, tools); the published video is in docs/media/
+brag-output/
+
+# Early design exploration, superseded by the app itself
+design/
