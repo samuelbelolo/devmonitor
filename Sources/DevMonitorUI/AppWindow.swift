@@ -1,7 +1,5 @@
-import DevMonitorCore
-
-/// One of the app's windows: the memory window, or the window of one agent's menu bar item.
+/// One of the app's windows: the memory window, or the agents window.
 public enum AppWindow: Hashable, Sendable {
     case memory
-    case agent(Agent)
+    case agents
 }

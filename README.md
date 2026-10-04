@@ -11,6 +11,7 @@ A second item counts your agent sessions and tells you when an agent has a new v
 
 - [Requirements](#requirements)
 - [Install](#install)
+- [Update](#update)
 - [Use](#use)
 - [Safety](#safety)
 - [Privacy](#privacy)
@@ -35,7 +36,7 @@ curl -fsSL https://raw.githubusercontent.com/samuelbelolo/devmonitor/main/script
 ```
 
 It downloads the source, builds the app (about a minute), copies it to `/Applications` (or
-`~/Applications`) and launches it. Run the same command again to update.
+`~/Applications`) and launches it.
 
 To start it with your Mac, open the `…` menu of the app and tick **Launch at login**; macOS
 lists it under **System Settings → General → Login Items**.
@@ -44,6 +45,21 @@ To uninstall, untick **Launch at login**, choose **Quit**, and delete the app.
 
 The app is built locally because it is not notarized by Apple: a downloaded copy would be
 blocked by Gatekeeper. From a clone, `make install` does the same.
+
+## Update
+
+Run the install command again:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/samuelbelolo/devmonitor/main/scripts/install.sh | bash
+```
+
+It builds the latest version, quits the running app, replaces it and starts the new one. Your
+settings stay. From a clone: `git pull`, then `make install`.
+
+The app does not tell you when a new version of itself is out: watch the repository's releases
+on GitHub (**Watch → Custom → Releases**) to be notified. If **Launch at login** no longer
+starts it after an update, untick it and tick it again: each build is signed anew on your Mac.
 
 ## Use
 
@@ -56,9 +72,10 @@ died) and `idle` (no CPU for 10 minutes). MCP servers have their own collapsed g
 - **Stop N idle**, then **Confirm**: stops the idle services counted at the first click.
 - A process still running 5 seconds later gets a **Force quit** button.
 
-**The agents item** shows the logo of each agent with its number of open sessions; a Codex item
-appears as soon as a Codex session runs. The logo turns while a session works, and an orange
-dot means a new version is published. Its window lists:
+**The agents item** (`✳ ֍ 12`) shows the logo of each agent with a session side by side, then
+their total number of sessions. A Codex that another agent started (Claude running `codex exec`
+for a review) counts as a session too, "launched by Claude". Each logo turns while its agent
+works, and an orange dot means a new version is published. Its window lists:
 
 - the sessions by project, each one marked as working or waiting;
 - each installed agent's version, the command to update it (**Copy**), and the sessions still

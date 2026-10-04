@@ -19,7 +19,7 @@ func render(to path: String) async {
     await store.refresh()
     await versions.refresh(fetchingLatest: true)
     let content: AnyView = showsAgents
-        ? AnyView(AgentsContentView(agent: .claude).agentEnvironment(store: store, versions: versions))
+        ? AnyView(AgentsContentView().agentEnvironment(store: store, versions: versions))
         : AnyView(MenuContentView().environmentObject(store))
     // Sized the way MenuBarExtra sizes its window: from the content's preferred size, not its fitting size.
     let controller = NSHostingController(rootView: content.background(Color(nsColor: .windowBackgroundColor)))

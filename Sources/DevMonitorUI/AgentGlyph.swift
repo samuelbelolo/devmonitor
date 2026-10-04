@@ -7,18 +7,35 @@ import DevMonitorCore
 enum AgentGlyph {
     /// Positions of a full turn the working logo steps through.
     static let frameCount = 8
-    /// Images already drawn, by agent, frame and badge: the menu bar asks again at every tick.
+    /// Images already drawn, by their logos: the menu bar asks again at every tick.
     @MainActor private static var cache: [String: NSImage] = [:]
     private static let size = NSSize(width: 16, height: 16)
+    /// Gap between two logos.
+    private static let spacing: CGFloat = 3
     private static let badgeOrange = NSColor(Palette.idle)
 
-    /// Returns the image for one frame. It draws when the menu bar draws it, so a logo without a brand color
-    /// takes the menu bar's own text color, light or dark.
-    /// @example AgentGlyph.image(for: .claude, frame: 3, badge: true)
-    @MainActor static func image(for agent: Agent, frame: Int, badge: Bool) -> NSImage {
-        let key = "\(agent.rawValue)-\(frame % frameCount)-\(badge)"
+    /// One logo of the menu bar item: the agent, its frame, and whether a newer version is published.
+    struct Logo: Hashable {
+        let agent: Agent
+        let frame: Int
+        let badge: Bool
+    }
+
+    /// Returns the logos side by side in one image. It draws when the menu bar draws it, so a logo without a brand
+    /// color takes the menu bar's own text color, light or dark.
+    /// @example AgentGlyph.image(for: [Logo(agent: .claude, frame: 3, badge: true)])
+    @MainActor static func image(for logos: [Logo]) -> NSImage {
+        let key = logos.map { "\($0.agent.rawValue)-\($0.frame % frameCount)-\($0.badge)" }.joined(separator: "+")
         if let cached = cache[key] { return cached }
-        let image = draw(agent, frame: frame, badge: badge)
+        let frames = logos.map { draw($0.agent, frame: $0.frame, badge: $0.badge) }
+        let width = CGFloat(frames.count) * size.width + CGFloat(max(frames.count - 1, 0)) * spacing
+        let image = NSImage(size: NSSize(width: width, height: size.height), flipped: false) { _ in
+            for (index, frame) in frames.enumerated() {
+                frame.draw(in: NSRect(origin: NSPoint(x: CGFloat(index) * (size.width + spacing), y: 0), size: size))
+            }
+            return true
+        }
+        image.isTemplate = false
         cache[key] = image
         return image
     }

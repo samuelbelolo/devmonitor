@@ -36,10 +36,12 @@ struct AgentVersionRow: View {
         .padding(.vertical, 4)
     }
 
-    /// The sessions line; it also says when the latest version is unknown, which needs no chip.
+    /// The sessions line: the count, whether the latest version is unknown (no chip for it), then who launched them.
     private var subtitle: String {
-        let sessionsText = Strings.openSessions(sessions.count)
-        return report.installed != nil && report.latest == nil ? sessionsText + " · " + Strings.latestUnknown : sessionsText
+        let counts = sessions.compactMap(\.launchedBy).reduce(into: [Agent: Int]()) { $0[$1, default: 0] += 1 }
+        let launched = Agent.allCases.compactMap { agent in counts[agent].map { Strings.launchedBy($0, agent.displayName) } }
+        let unknown = report.installed != nil && report.latest == nil ? [Strings.latestUnknown] : []
+        return ([Strings.openSessions(sessions.count)] + unknown + launched).joined(separator: " · ")
     }
 
     @ViewBuilder private var status: some View {

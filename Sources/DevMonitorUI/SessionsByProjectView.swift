@@ -29,6 +29,7 @@ struct SessionsByProjectView: View {
                     HStack(spacing: 3) {
                         ForEach(project.sessions.prefix(8)) { session in
                             AgentLogoView(agent: session.agent, size: 11, isDimmed: !working.contains(session.id))
+                                .help(Strings.session(of: session.agent, launchedBy: session.launchedBy))
                         }
                     }
                     Text("\(project.sessions.count)").fontWeight(.bold).monospacedDigit().frame(minWidth: 14, alignment: .trailing)

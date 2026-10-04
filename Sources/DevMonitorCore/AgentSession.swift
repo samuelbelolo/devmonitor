@@ -10,10 +10,13 @@ public struct AgentSession: Identifiable, Equatable, Sendable {
     /// CPU time of the session: its process and the processes of the same agent below it, such as the native
     /// binary an npm launcher starts and waits for.
     public let cpuTimeNs: UInt64
+    /// The agent whose session started this one, e.g. Claude running `codex exec` for a review; nil when a person did.
+    public let launchedBy: Agent?
 
     /// Creates a session; its CPU time defaults to its process's own.
     /// @example AgentSession(agent: .claude, process: claudeProcess, location: nil).cpuTimeNs // claudeProcess.cpuTimeNs
-    public init(agent: Agent, process: ProcessSnapshot, location: ProjectLocation?, cpuTimeNs: UInt64? = nil) {
+    public init(agent: Agent, process: ProcessSnapshot, location: ProjectLocation?, cpuTimeNs: UInt64? = nil, launchedBy: Agent? = nil) {
+        self.launchedBy = launchedBy
         self.agent = agent
         self.process = process
         self.location = location

@@ -1,7 +1,6 @@
 import Foundation
 
 /// A coding agent whose sessions the monitor recognises and never signals.
-/// A new case also needs its menu bar item, listed by hand in `DevMonitorApp.body`.
 public enum Agent: String, CaseIterable, Equatable, Sendable {
     case claude
     case codex

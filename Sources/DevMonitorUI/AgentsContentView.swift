@@ -1,10 +1,8 @@
 import DevMonitorCore
 import SwiftUI
 
-/// The window opened from an agent's menu bar item: the sessions, where they run, and the agents' versions.
+/// The window opened from the agents menu bar item: the sessions, where they run, and the agents' versions.
 public struct AgentsContentView: View {
-    /// The agent whose menu bar item opens this window.
-    let agent: Agent
     @EnvironmentObject private var store: MonitorStore
     @EnvironmentObject private var versions: VersionStore
     @EnvironmentObject private var clock: GlyphClock
@@ -12,9 +10,7 @@ public struct AgentsContentView: View {
     /// The glyphs Claude Code itself cycles through while it thinks.
     private static let thinking = ["·", "✢", "✳", "✶", "✻", "✽", "✻", "✶", "✳", "✢"]
 
-    public init(agent: Agent) {
-        self.agent = agent
-    }
+    public init() {}
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -44,10 +40,10 @@ public struct AgentsContentView: View {
         .padding(14)
         .frame(width: 360)
         .onAppear {
-            store.setWindow(.agent(agent), isOpen: true)
+            store.setWindow(.agents, isOpen: true)
             Task { await versions.refreshInstalled() }
         }
-        .onDisappear { store.setWindow(.agent(agent), isOpen: false) }
+        .onDisappear { store.setWindow(.agents, isOpen: false) }
     }
 
     /// Returns the small capitalised title of a section.

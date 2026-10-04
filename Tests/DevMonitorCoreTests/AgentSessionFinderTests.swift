@@ -29,12 +29,17 @@ final class AgentSessionFinderTests: XCTestCase {
         XCTAssertEqual(found.map(\.location?.name), ["shop", "api"])
     }
 
-    func testAgentStartedByAnotherAgentBelongsToTheFirstSession() {
+    func testAgentStartedByAnotherAgentIsItsOwnSession() {
         let found = sessions([
-            snap(20, parent: 1, path: "/Users/me/.local/bin/claude", args: ["claude"], cwd: "shop"),
-            snap(21, parent: 20, path: "/Users/me/.local/bin/codex", args: ["codex", "exec", "review"], cwd: "shop"),
+            snap(20, parent: 1, path: "/Users/me/.local/bin/claude", args: ["claude"], cwd: "shop", cpu: 1_000),
+            snap(30, parent: 20, path: "/bin/zsh", args: ["zsh", "-c", "codex exec -"], cwd: "shop"),
+            snap(31, parent: 30, path: "/Users/me/.local/bin/codex", args: ["codex", "exec", "-"], cwd: "shop", cpu: 7_000),
         ])
-        XCTAssertEqual(found.map(\.process.pid), [20])
+        XCTAssertEqual(found.map(\.process.pid), [20, 31])
+        XCTAssertEqual(found.map(\.agent), [.claude, .codex])
+        XCTAssertEqual(found.map(\.launchedBy), [nil, .claude])
+        XCTAssertEqual(found.map(\.cpuTimeNs), [1_000, 7_000])
+        XCTAssertEqual(found.map(\.location?.name), ["shop", "shop"])
     }
 
     func testWrapperAndAgentCountAsOneSession() {
@@ -43,6 +48,26 @@ final class AgentSessionFinderTests: XCTestCase {
             snap(21, parent: 20, path: "/opt/homebrew/lib/node_modules/@openai/codex/vendor/codex", args: ["codex"], cwd: "api"),
         ])
         XCTAssertEqual(found.map(\.process.pid), [20])
+    }
+
+    func testAgentAnAgentRunsDirectlyBelongsToItsSession() {
+        let found = sessions([
+            snap(20, parent: 1, path: "/Users/me/.local/bin/claude", args: ["claude"], cwd: "shop", cpu: 1_000),
+            snap(21, parent: 20, path: "/Users/me/.local/bin/codex", args: ["codex", "mcp-server"], cwd: "shop", cpu: 2_000),
+        ])
+        XCTAssertEqual(found.map(\.process.pid), [20])
+        XCTAssertEqual(found.map(\.cpuTimeNs), [3_000])
+    }
+
+    func testSameAgentRunThroughAShellIsItsOwnSession() {
+        let found = sessions([
+            snap(20, parent: 1, path: "/Users/me/.local/bin/claude", args: ["claude"], cwd: "shop", cpu: 1_000),
+            snap(30, parent: 20, path: "/bin/zsh", args: ["zsh", "-c", "claude -p review"], cwd: "shop"),
+            snap(31, parent: 30, path: "/Users/me/.local/bin/claude", args: ["claude", "-p", "review"], cwd: "shop", cpu: 4_000),
+        ])
+        XCTAssertEqual(found.map(\.process.pid), [20, 31])
+        XCTAssertEqual(found.map(\.launchedBy), [nil, .claude])
+        XCTAssertEqual(found.map(\.cpuTimeNs), [1_000, 4_000])
     }
 
     func testSessionOutsideAnyProjectHasNoLocation() {

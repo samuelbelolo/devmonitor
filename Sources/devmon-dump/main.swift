@@ -17,6 +17,6 @@ for group in scan.groups {
     }
 }
 for session in scan.agentSessions {
-    print("agent  \(session.process.pid)  \(session.agent.displayName)  \(session.version?.text ?? "?")  [\(session.location?.name ?? "outside any project")]")
+    print("agent  \(session.process.pid)  \(session.agent.displayName)  \(session.version?.text ?? "?")  [\(session.location?.name ?? "outside any project")]" + (session.launchedBy.map { "  launched by \($0.displayName)" } ?? ""))
 }
 print(String(format: "scan: %d process, %.0f ms", scan.processIdentities.count, Date().timeIntervalSince(started) * 1000))

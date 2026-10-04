@@ -80,6 +80,19 @@ enum Strings {
         return french ? "\(count) session\(count > 1 ? "s" : "") ouverte\(count > 1 ? "s" : "")" : "\(count) open session\(count > 1 ? "s" : "")"
     }
 
+    /// Names a session: its agent, and the agent that started it, if any.
+    /// @example Strings.session(of: .codex, launchedBy: .claude) // "Codex, launched by Claude"
+    static func session(of agent: Agent, launchedBy launcher: Agent?) -> String {
+        guard let launcher else { return agent.displayName }
+        return french ? "\(agent.displayName), lancée par \(launcher.displayName)" : "\(agent.displayName), launched by \(launcher.displayName)"
+    }
+
+    /// Returns how many of an agent's sessions another agent started, e.g. Claude running Codex for a review.
+    /// @example Strings.launchedBy(1, "Claude") // "1 launched by Claude"
+    static func launchedBy(_ count: Int, _ agent: String) -> String {
+        french ? "\(count) lancée\(count > 1 ? "s" : "") par \(agent)" : "\(count) launched by \(agent)"
+    }
+
     /// Returns the tag of an agent with a newer version published.
     /// @example Strings.available("2.1.291") // "2.1.291 available"
     static func available(_ version: String) -> String {
