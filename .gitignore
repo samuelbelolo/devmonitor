@@ -19,3 +19,6 @@ brag-output/
 
 # Early design exploration, superseded by the app itself
 design/
+
+# Local Serena MCP config
+.serena/

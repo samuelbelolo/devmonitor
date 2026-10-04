@@ -17,7 +17,7 @@ func render(to path: String) async {
     // Two scans at least, so the working state of the agent sessions is known.
     try? await Task.sleep(for: .seconds(9))
     await store.refresh()
-    await versions.refresh()
+    await versions.refresh(fetchingLatest: true)
     let content: AnyView = showsAgents
         ? AnyView(AgentsContentView(agent: .claude).agentEnvironment(store: store, versions: versions))
         : AnyView(MenuContentView().environmentObject(store))

@@ -45,7 +45,7 @@ public struct AgentsContentView: View {
         .frame(width: 360)
         .onAppear {
             store.setWindow(.agent(agent), isOpen: true)
-            Task { await versions.refreshIfStale() }
+            Task { await versions.refreshInstalled() }
         }
         .onDisappear { store.setWindow(.agent(agent), isOpen: false) }
     }
