@@ -14,12 +14,15 @@ let showsAgents = arguments.dropFirst().first == "agents"
 func render(to path: String) async {
     let store = MonitorStore()
     let versions = VersionStore()
+    let extensions = ExtensionStore(versions: versions)
     // Two scans at least, so the working state of the agent sessions is known.
     try? await Task.sleep(for: .seconds(9))
     await store.refresh()
     await versions.refresh(fetchingLatest: true)
+    // The store asked GitHub when it was created, during the wait above: this only reads the files again.
+    await extensions.refresh(fetchingUpstream: false)
     let content: AnyView = showsAgents
-        ? AnyView(AgentsContentView().agentEnvironment(store: store, versions: versions))
+        ? AnyView(AgentsContentView().agentEnvironment(store: store, versions: versions, extensions: extensions))
         : AnyView(MenuContentView().environmentObject(store))
     // Sized the way MenuBarExtra sizes its window: from the content's preferred size, not its fitting size.
     let controller = NSHostingController(rootView: content.background(Color(nsColor: .windowBackgroundColor)))

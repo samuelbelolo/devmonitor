@@ -14,6 +14,9 @@ build/
 plans/
 docs/research/
 
+# Specs and plans written with the Superpowers skills
+docs/superpowers/
+
 # Launch video workspace (plan, share copy, frames, tools); the published video is in docs/media/
 brag-output/
 
