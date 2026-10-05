@@ -5,7 +5,7 @@ what your dev setup is really running — dev servers, workers, MCP servers, Doc
 containers — grouped by git repository, with the memory each one holds, and lets you stop it.
 A second item counts your agent sessions and tells you when an agent has a new version.
 
-[![DevMonitor: the agents window, with sessions and versions, and the memory window, grouped by repo](docs/media/demo.jpg)](docs/media/demo.mp4)
+[![DevMonitor: the agents window, with sessions, versions and extensions, and the memory window, grouped by repo](docs/media/demo.jpg)](docs/media/demo.mp4)
 
 *Click the image to watch the 23-second demo.*
 
