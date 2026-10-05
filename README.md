@@ -79,7 +79,10 @@ works, and an orange dot means a new version is published. Its window lists:
 
 - the sessions by project, each one marked as working or waiting;
 - each installed agent's version, the command to update it (**Copy**), and the sessions still
-  running an older version, which need a restart to pick up an update.
+  running an older version, which need a restart to pick up an update;
+- the skills installed with `npx skills` and the plugins installed with `claude plugin`, grouped
+  by repository or marketplace: which ones have an update, and the command to run (**Copy**).
+  A skill is "moved" when its folder no longer exists in its repository.
 
 ## Safety
 
@@ -101,8 +104,10 @@ DevMonitor reads your own processes' command lines to name them, on your Mac onl
 shows the value of an option, a `KEY=value` argument, a URL or a token. Nothing is stored.
 
 The only network requests are the version checks: every 6 hours, the app asks the npm registry
-(and PyPI for Aider) for the latest version of each installed agent. Only the package name is
-sent. Turn it off in the agents window: `…` → **Check for new versions**.
+(and PyPI for Aider) for the latest version of each installed agent, and GitHub for the file
+tree of each repository your skills come from. Only the package or repository name is sent,
+with no account or token. Turn both off in the agents window: `…` → **Check for new versions**.
+Plugins are compared with the marketplaces already on your Mac, with no request.
 
 ## Limits
 
@@ -111,6 +116,15 @@ sent. Turn it off in the agents window: `…` → **Check for new versions**.
   like a server.
 - An MCP server whose agent died is recognised by its command name only.
 - DevMonitor does not know where Cursor Agent publishes its versions, so its status shows as unknown.
+- Only global skills are listed (`~/.agents/.skill-lock.json`), not the ones a project installs,
+  nor skills copied by hand into `~/.claude/skills`.
+- GitHub allows 60 anonymous requests per hour for your whole network address. When it refuses,
+  the last answer is kept; private repositories always read as unknown.
+- A plugin's state is as fresh as its marketplace on your Mac: DevMonitor never refreshes one.
+  Past seven days it shows the command that does, `claude plugin marketplace update`.
+- A plugin pinned to a commit of another repository shows an update as soon as its marketplace
+  pins a newer commit, unless the catalog gives its version. If the plugin's version did not
+  change, `claude plugin update` answers that it is already the latest.
 - It is not a security tool: a program can keep out of the list by naming itself like a
   protected one.
 
@@ -127,7 +141,10 @@ make help       # every command
 `Sources/DevMonitorCore` holds the scanning, grouping, stop and version logic; `DevMonitorUI`
 the SwiftUI views and stores; `DevMonitorApp` the entry point. Processes are read through
 `libproc` (no `ps` or `lsof`), every 3 seconds while a window is open and every 30 seconds
-otherwise; Docker through its CLI, against the local socket only.
+otherwise; Docker through its CLI, against the local socket only. Skills are compared the way
+`skills update` does it: the git tree hash of each skill's folder against GitHub's trees API.
+A plugin is compared with its marketplace's catalog: by commit, by declared version, or file by
+file when it has neither.
 
 ## Credits and license
 

@@ -19,4 +19,12 @@ for group in scan.groups {
 for session in scan.agentSessions {
     print("agent  \(session.process.pid)  \(session.agent.displayName)  \(session.version?.text ?? "?")  [\(session.location?.name ?? "outside any project")]" + (session.launchedBy.map { "  launched by \($0.displayName)" } ?? ""))
 }
+// The skills are listed without asking GitHub, so the dump stays offline; the plugins are compared on disk.
+let extensions = InstalledExtensions.read().report(trees: [:], checksUpstream: false, now: Date())
+for source in extensions.skills {
+    print("skills  \(source.name)  \(source.items.count) installed  not checked")
+}
+for source in extensions.plugins {
+    print("plugins  \(source.name)  \(source.items.count) installed  \(source.updates) to update  \(source.unknown) unknown")
+}
 print(String(format: "scan: %d process, %.0f ms", scan.processIdentities.count, Date().timeIntervalSince(started) * 1000))

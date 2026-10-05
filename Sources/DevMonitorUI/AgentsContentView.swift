@@ -5,6 +5,7 @@ import SwiftUI
 public struct AgentsContentView: View {
     @EnvironmentObject private var store: MonitorStore
     @EnvironmentObject private var versions: VersionStore
+    @EnvironmentObject private var extensions: ExtensionStore
     @EnvironmentObject private var clock: GlyphClock
 
     /// The glyphs Claude Code itself cycles through while it thinks.
@@ -24,17 +25,18 @@ public struct AgentsContentView: View {
                 settingsMenu
             }
             if !store.agentSessions.isEmpty {
-                section(Strings.byProject)
+                SectionTitle(title: Strings.byProject)
                 SessionsByProjectView(sessions: store.agentSessions, working: store.workingSessions)
             }
             Divider()
-            section(Strings.versions)
+            SectionTitle(title: Strings.versions)
             if versions.reports.isEmpty {
                 Text(Strings.noAgent).foregroundStyle(.secondary).padding(.horizontal, 6)
             }
             ForEach(versions.reports) { report in
                 AgentVersionRow(report: report, sessions: store.sessions(of: report.agent))
             }
+            ExtensionsSection()
         }
         .font(.system(size: 12.5))
         .padding(14)
@@ -42,14 +44,9 @@ public struct AgentsContentView: View {
         .onAppear {
             store.setWindow(.agents, isOpen: true)
             Task { await versions.refreshInstalled() }
+            Task { await extensions.refresh(fetchingUpstream: false) }
         }
         .onDisappear { store.setWindow(.agents, isOpen: false) }
-    }
-
-    /// Returns the small capitalised title of a section.
-    /// @example section("Versions")
-    private func section(_ title: String) -> some View {
-        Text(title.uppercased()).font(.system(size: 11, weight: .semibold)).kerning(0.6).foregroundStyle(.secondary).padding(.top, 2)
     }
 
     private var settingsMenu: some View {

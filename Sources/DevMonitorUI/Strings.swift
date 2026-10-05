@@ -106,4 +106,96 @@ enum Strings {
             ? "\(count) session\(count > 1 ? "s" : "") en \(oldest) · à relancer"
             : "\(count) session\(count > 1 ? "s" : "") on \(oldest) · restart to update"
     }
+
+    static let extensions = "Extensions"
+    static let unknown = french ? "inconnu" : "unknown"
+
+    /// Returns the title of a kind of extension.
+    /// @example Strings.title(.plugins) // "Plugins"
+    static func title(_ kind: ExtensionKind) -> String {
+        kind == .plugins ? "Plugins" : "Skills"
+    }
+
+    /// Returns what the sources of a kind are called, for a count of them.
+    /// @example Strings.sourceNoun(.plugins, count: 6) // "marketplaces"
+    private static func sourceNoun(_ kind: ExtensionKind, count: Int) -> String {
+        (kind == .plugins ? "marketplace" : "source") + (count > 1 ? "s" : "")
+    }
+
+    /// Returns a count of installed extensions and of their sources.
+    /// @example Strings.installed(85, sources: 11, kind: .skills) // "85 · 11 sources"
+    static func installed(_ count: Int, sources: Int, kind: ExtensionKind) -> String {
+        "\(count) · \(sources) \(sourceNoun(kind, count: sources))"
+    }
+
+    /// Returns a count of extensions with an update.
+    /// @example Strings.updates(27) // "27 updates"
+    static func updates(_ count: Int) -> String {
+        french ? "\(count) mise\(count > 1 ? "s" : "") à jour" : "\(count) update\(count > 1 ? "s" : "")"
+    }
+
+    /// Returns a count of skills whose folder no longer exists upstream.
+    /// @example Strings.moved(18) // "18 moved"
+    static func moved(_ count: Int) -> String {
+        french ? "\(count) déplacé\(count > 1 ? "s" : "")" : "\(count) moved"
+    }
+
+    /// Returns when GitHub last answered about the skills.
+    /// @example Strings.checked(ago: "2 h") // "checked 2 h ago"
+    static func checked(ago duration: String) -> String {
+        french ? "vérifié il y a \(duration)" : "checked \(duration) ago"
+    }
+
+    /// Returns up to three names, then how many more there are.
+    /// @example Strings.names(["a", "b", "c", "d", "e"]) // "a, b, c and 2 more"
+    static func names(_ names: [String]) -> String {
+        let shown = names.prefix(3).joined(separator: ", ")
+        let rest = names.count - 3
+        guard rest > 0 else { return shown }
+        return shown + (french ? " et \(rest) autre\(rest > 1 ? "s" : "")" : " and \(rest) more")
+    }
+
+    /// Returns the line that folds the sources with nothing to do. `others` is set when sources are listed above
+    /// it, and `checked` is false when the check is turned off.
+    /// @example Strings.quietSources(4, items: 23, kind: .skills, others: true, checked: true) // "4 other sources up to date · 23 skills"
+    static func quietSources(_ count: Int, items: Int, kind: ExtensionKind, others: Bool, checked: Bool) -> String {
+        let plural = count > 1 ? "s" : ""
+        let noun = sourceNoun(kind, count: count)
+        let what = "\(items) \(kind == .plugins ? "plugin" : "skill")\(items > 1 ? "s" : "")"
+        let sources = french ? "\(count) \(others ? "autre\(plural) " : "")\(noun)" : "\(count) \(others ? "other " : "")\(noun)"
+        if !checked { return sources + (french ? " non vérifiée\(plural) · " : " not checked · ") + what }
+        return sources + (french ? " à jour · " : " up to date · ") + what
+    }
+
+    /// Returns the note on skills whose folder no longer exists in their repository.
+    /// @example Strings.movedNote(18) // "18 skills are no longer at this place in the repository: renamed, merged or removed."
+    static func movedNote(_ count: Int) -> String {
+        french
+            ? "\(count) skill\(count > 1 ? "s" : "") n'existe\(count > 1 ? "nt" : "") plus à cet endroit du dépôt : renommé\(count > 1 ? "s" : ""), fusionné\(count > 1 ? "s" : "") ou supprimé\(count > 1 ? "s" : "")."
+            : "\(count) skill\(count > 1 ? "s are" : " is") no longer at this place in the repository: renamed, merged or removed."
+    }
+
+    /// Returns the warning on marketplaces that were not refreshed for more than seven days.
+    /// @example Strings.staleCatalogs(5) // "5 catalogs are more than 7 days old: the states above may be late."
+    static func staleCatalogs(_ count: Int) -> String {
+        french
+            ? "\(count) catalogue\(count > 1 ? "s ont" : " a") plus de 7 jours : les états ci-dessus peuvent être en retard."
+            : "\(count) catalog\(count > 1 ? "s are" : " is") more than 7 days old: the states above may be late."
+    }
+
+    /// Returns why the state of a source's extensions could not be told.
+    /// @example Strings.unknownReason(.notGitHub) // "The source is not a GitHub repository."
+    static func unknownReason(_ reason: UnknownReason) -> String {
+        switch reason {
+        case .untracked: french ? "Le fichier de verrouillage ne garde ni dossier ni empreinte à comparer." : "The lock file keeps no folder or hash to compare."
+        case .notGitHub: french ? "La source n'est pas un dépôt GitHub." : "The source is not a GitHub repository."
+        case .noAnswer:
+            french
+                ? "GitHub n'a pas donné l'arbre de ce dépôt : pas de réponse, limite horaire atteinte, ou dépôt trop grand."
+                : "GitHub did not give this repository's tree: no answer, hourly limit reached, or repository too large."
+        case .noCatalog: french ? "Ce marketplace, ou son catalogue, est introuvable sur ce Mac." : "This marketplace, or its catalog, is not on this Mac."
+        case .nothingToCompare: french ? "Rien à comparer : ni version, ni commit, ni fichiers à rapprocher." : "Nothing to compare: no version, commit or files to set side by side."
+        case .unsafeName: french ? "Une mise à jour existe, mais le nom contient des caractères spéciaux : aucune commande n'est proposée." : "An update exists, but the name has special characters: no command is offered."
+        }
+    }
 }
