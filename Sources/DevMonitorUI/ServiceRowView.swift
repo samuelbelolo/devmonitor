@@ -21,6 +21,13 @@ struct ServiceRowView: View {
         return [count, place].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
+    /// The ports, then the orphan and idle states.
+    @ViewBuilder private var chips: some View {
+        ForEach(row.ports.prefix(2), id: \.self) { Chip(text: ":\($0)") }
+        if row.isOrphan { Chip(text: Strings.orphan, tint: Palette.orphan) }
+        if let idleSeconds, isIdle { Chip(text: Strings.idle(for: DisplayFormat.duration(seconds: idleSeconds)), tint: Palette.idle) }
+    }
+
     var body: some View {
         HStack(spacing: 8) {
             Circle().fill(stateColor).frame(width: 7, height: 7)
@@ -31,11 +38,17 @@ struct ServiceRowView: View {
             .frame(width: 13, height: 13)
             .foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 5) {
-                    Text(row.label).lineLimit(1).truncationMode(.middle)
-                    ForEach(row.ports.prefix(2), id: \.self) { Chip(text: ":\($0)") }
-                    if row.isOrphan { Chip(text: Strings.orphan, tint: Palette.orphan) }
-                    if let idleSeconds, isIdle { Chip(text: Strings.idle(for: DisplayFormat.duration(seconds: idleSeconds)), tint: Palette.idle) }
+                // The chips never shrink, so on a narrow line they would squeeze the name down to "…":
+                // when both do not fit side by side, the chips go under the name.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 5) {
+                        Text(row.label).lineLimit(1).fixedSize()
+                        chips
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(row.label).lineLimit(1).truncationMode(.middle)
+                        HStack(spacing: 5) { chips }
+                    }
                 }
                 HStack(spacing: 4) {
                     if !detail.isEmpty { Text(detail).lineLimit(1).truncationMode(.middle) }
