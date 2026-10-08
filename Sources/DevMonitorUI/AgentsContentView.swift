@@ -41,6 +41,7 @@ public struct AgentsContentView: View {
         .font(.system(size: 12.5))
         .padding(14)
         .frame(width: 360)
+        .background(WindowFit())
         .onAppear {
             store.setWindow(.agents, isOpen: true)
             Task { await versions.refreshInstalled() }

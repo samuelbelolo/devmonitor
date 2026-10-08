@@ -49,6 +49,7 @@ public struct MenuContentView: View {
         .font(.system(size: 12.5))
         .padding(14)
         .frame(width: 400)
+        .background(WindowFit())
         .onAppear { store.setWindow(.memory, isOpen: true) }
         .onDisappear { store.setWindow(.memory, isOpen: false) }
     }
