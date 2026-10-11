@@ -2,12 +2,13 @@ import Foundation
 
 /// Reads `~/.agents/.skill-lock.json`, where the `skills` tool records what it installed globally.
 public enum SkillLock {
-    /// Returns the skills of a lock file in name order; none when the data is not a lock file.
-    /// @example SkillLock.skills(from: lockData).map(\.name) // ["audit", "find-skills"]
-    public static func skills(from data: Data) -> [InstalledSkill] {
+    /// Returns the skills of a lock file in name order; nil when the data is not a lock file, as when the `skills`
+    /// tool is halfway through rewriting it.
+    /// @example SkillLock.skills(from: lockData)?.map(\.name) // ["audit", "find-skills"]
+    public static func skills(from data: Data) -> [InstalledSkill]? {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let entries = json["skills"] as? [String: Any]
-        else { return [] }
+        else { return nil }
         return entries.compactMap { name, value -> InstalledSkill? in
             guard let entry = value as? [String: Any] else { return nil }
             return InstalledSkill(

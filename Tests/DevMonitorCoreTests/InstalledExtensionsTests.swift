@@ -19,10 +19,45 @@ final class InstalledExtensionsTests: XCTestCase {
         XCTAssertFalse(report.isEmpty)
     }
 
+    func testALockFileHalfwayThroughARewriteIsToldApart() {
+        let files = [
+            "/h/.agents/.skill-lock.json": #"{"version":3,"skills":{"aud"#,
+            "/h/.claude/plugins/installed_plugins.json": #"{"plugins":{"figma@official":[{"scope":"user","version":"1"}]}}"#,
+        ]
+        let installed = InstalledExtensions.read(home: "/h") { files[$0].map { Data($0.utf8) } }
+        XCTAssertFalse(installed.isSkillLockReadable)
+        XCTAssertTrue(installed.skills.isEmpty)
+        XCTAssertEqual(installed.plugins.count, 1)
+        XCTAssertTrue(InstalledExtensions.read(home: "/nowhere") { _ in nil }.isSkillLockReadable)
+    }
+
+    func testOneCommandUpdatesSkillsOfSeveralRepositoriesAndThePlugins() {
+        let skill = { (name: String, repo: String) in
+            #""\#(name)":{"source":"\#(repo)","sourceType":"github","skillPath":"skills/\#(name)/SKILL.md","skillFolderHash":"old"}"#
+        }
+        let files = [
+            "/h/.agents/.skill-lock.json": "{\"skills\":{\(skill("audit", "acme/kit")),\(skill("wizard", "other/kit")),\(skill("same", "other/kit"))}}",
+            "/h/.claude/plugins/installed_plugins.json": #"{"plugins":{"figma@official":[{"scope":"user","version":"1","gitCommitSha":"old"}]}}"#,
+            "/h/.claude/plugins/known_marketplaces.json": #"{"official":{"installLocation":"/m/official"}}"#,
+            "/m/official/.claude-plugin/marketplace.json": #"{"plugins":[{"name":"figma","source":{"sha":"new"}}]}"#,
+        ]
+        let installed = InstalledExtensions.read(home: "/h") { files[$0].map { Data($0.utf8) } }
+        let trees = [
+            SkillSource(repo: "acme/kit", ref: nil): RepoTree(rootSHA: "r", folders: ["skills/audit": "new"], isTruncated: false),
+            SkillSource(repo: "other/kit", ref: nil): RepoTree(rootSHA: "r", folders: ["skills/wizard": "new", "skills/same": "old"], isTruncated: false),
+        ]
+        let report = installed.report(trees: trees, checksUpstream: true, now: Date())
+        XCTAssertEqual(report.updateAll, UpdateAll(command: "npx skills update audit wizard -g -y; claude plugin update figma@official --scope user", skills: 2, plugins: 1))
+        XCTAssertNil(installed.report(trees: [:], checksUpstream: false, now: Date()).updateAll)
+        let oneSource = installed.report(trees: trees.filter { $0.key.repo == "acme/kit" }, checksUpstream: true, now: Date())
+        XCTAssertEqual(oneSource.updateAll?.command, "npx skills update audit -g -y; claude plugin update figma@official --scope user")
+    }
+
     func testMissingFilesGiveAnEmptyReport() {
         let installed = InstalledExtensions.read(home: "/nowhere") { _ in nil }
         XCTAssertTrue(installed.skillSources.isEmpty)
         XCTAssertTrue(installed.report(trees: [:], checksUpstream: true, now: Date()).isEmpty)
         XCTAssertTrue(ExtensionReport.empty.isEmpty)
+        XCTAssertNil(ExtensionReport.empty.updateAll)
     }
 }

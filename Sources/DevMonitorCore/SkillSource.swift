@@ -13,12 +13,34 @@ public struct SkillSource: Hashable, Sendable {
     /// The source as shown in the list: the repository, then the ref when there is one.
     public var name: String { ref.map { "\(repo)@\($0)" } ?? repo }
 
-    /// The address of the repository's whole tree at the ref; nil when the repository is not written `owner/name`.
-    public var treeURL: URL? {
-        guard repo.range(of: #"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"#, options: .regularExpression) != nil else { return nil }
+    /// Whether the repository is written `owner/name`, the only form that goes into an address.
+    private var isPlainRepo: Bool {
+        repo.range(of: #"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"#, options: .regularExpression) != nil
+    }
+
+    /// Returns the address of the repository's whole tree at a commit, or at the ref when `commit` is nil; nil when
+    /// the repository is not written `owner/name` or the commit is not a hash.
+    /// @example SkillSource(repo: "acme/kit", ref: nil).treeURL(at: "13e4063a1cf913f5606d57d42ab83a86f5001e04") // https://api.github.com/repos/acme/kit/git/trees/13e4063a1cf913f5606d57d42ab83a86f5001e04?recursive=1
+    public func treeURL(at commit: String?) -> URL? {
+        guard isPlainRepo else { return nil }
+        if let commit {
+            guard Self.isCommitHash(commit) else { return nil }
+            return URL(string: "https://api.github.com/repos/\(repo)/git/trees/\(commit)?recursive=1")
+        }
         var allowed = CharacterSet.alphanumerics
         allowed.insert(charactersIn: "._-")
         guard let branch = (ref ?? "HEAD").addingPercentEncoding(withAllowedCharacters: allowed) else { return nil }
         return URL(string: "https://api.github.com/repos/\(repo)/git/trees/\(branch)?recursive=1")
+    }
+
+    /// The address git asks for the repository's refs; outside the API, so not counted against its hourly limit.
+    public var uploadPackURL: URL? {
+        isPlainRepo ? URL(string: "https://github.com/\(repo).git/git-upload-pack") : nil
+    }
+
+    /// Whether a text is a full commit hash, SHA-1 or SHA-256.
+    /// @example SkillSource.isCommitHash("main") // false
+    public static func isCommitHash(_ text: String) -> Bool {
+        text.range(of: "^[0-9a-f]{40}([0-9a-f]{24})?$", options: .regularExpression) != nil
     }
 }

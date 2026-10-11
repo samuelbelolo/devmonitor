@@ -13,12 +13,24 @@ public enum ExtensionCommand {
         return safe.isEmpty ? nil : "npx skills update \(safe.joined(separator: " ")) -g -y"
     }
 
-    /// Returns the command that updates one install of a plugin; nil when its id or scope is not safe to paste.
-    /// The scope is always written: without it, the tool picks one from the folder the command runs in.
+    /// Returns the command that updates one install of a plugin; nil when its id, scope or project is not safe to
+    /// paste. The scope is always written: without it, the tool picks one from the folder the command runs in. An
+    /// install that belongs to a project is updated from that project, in a subshell so the terminal stays where it is.
     /// @example ExtensionCommand.updatePlugin(plugin) // "claude plugin update figma@claude-plugins-official --scope user"
     public static func updatePlugin(_ plugin: InstalledPlugin) -> String? {
         guard isPlainWord(plugin.pluginID), isPlainWord(plugin.scope) else { return nil }
-        return "claude plugin update \(plugin.pluginID) --scope \(plugin.scope)"
+        let update = "claude plugin update \(plugin.pluginID) --scope \(plugin.scope)"
+        guard let project = plugin.projectPath else { return update }
+        guard let folder = quoted(project) else { return nil }
+        return "(cd \(folder) && \(update))"
+    }
+
+    /// Returns a text in single quotes for the shell, each quote it holds written `'\''`; nil when it holds a
+    /// control character, which a pasted line would run or hide.
+    /// @example ExtensionCommand.quoted("/Users/me/it's") // "'/Users/me/it'\''s'"
+    public static func quoted(_ text: String) -> String? {
+        guard !text.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) }) else { return nil }
+        return "'" + text.replacingOccurrences(of: "'", with: #"'\''"#) + "'"
     }
 
     /// Whether a text is one shell word with no special character, and not an option.

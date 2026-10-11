@@ -103,10 +103,12 @@ Stopping an MCP server breaks the agent session that uses it, so MCP servers are
 DevMonitor reads your own processes' command lines to name them, on your Mac only, and never
 shows the value of an option, a `KEY=value` argument, a URL or a token. Nothing is stored.
 
-The only network requests are the version checks: every 6 hours, the app asks the npm registry
-(and PyPI for Aider) for the latest version of each installed agent, and GitHub for the file
-tree of each repository your skills come from. Only the package or repository name is sent,
-with no account or token. Turn both off in the agents window: `…` → **Check for new versions**.
+The only network requests are the version checks. Every 6 hours, the app asks the npm registry
+(and PyPI for Aider) for the latest version of each installed agent. Every 15 minutes, when the
+agents window opens after 5 minutes without a check, and when you press ↻, it asks GitHub's git
+server which commit each repository your skills come from is at, then GitHub's API for the file
+tree of the repositories whose commit moved. Only the package or repository name is sent, with
+no account or token. Turn both off in the agents window: `…` → **Check for new versions**.
 Plugins are compared with the marketplaces already on your Mac, with no request.
 
 ## Limits
@@ -118,8 +120,11 @@ Plugins are compared with the marketplaces already on your Mac, with no request.
 - DevMonitor does not know where Cursor Agent publishes its versions, so its status shows as unknown.
 - Only global skills are listed (`~/.agents/.skill-lock.json`), not the ones a project installs,
   nor skills copied by hand into `~/.claude/skills`.
-- GitHub allows 60 anonymous requests per hour for your whole network address. When it refuses,
-  the last answer is kept; private repositories always read as unknown.
+- GitHub's API allows 60 anonymous requests per hour for your whole network address, shared with
+  `npx skills update`, and an unchanged answer counts too. DevMonitor asks it only when a
+  repository's commit moved, once per repository at launch, and at most every 6 hours for a
+  repository the git server gives no commit for. When it refuses, the last answer
+  is kept; private repositories always read as unknown.
 - A plugin's state is as fresh as its marketplace on your Mac: DevMonitor never refreshes one.
   Past seven days it shows the command that does, `claude plugin marketplace update`.
 - A plugin pinned to a commit of another repository shows an update as soon as its marketplace
@@ -143,6 +148,8 @@ the SwiftUI views and stores; `DevMonitorApp` the entry point. Processes are rea
 `libproc` (no `ps` or `lsof`), every 3 seconds while a window is open and every 30 seconds
 otherwise; Docker through its CLI, against the local socket only. Skills are compared the way
 `skills update` does it: the git tree hash of each skill's folder against GitHub's trees API.
+The skills lock file and Claude Code's plugin files are watched, so the list follows an update
+as soon as the command that made it is done.
 A plugin is compared with its marketplace's catalog: by commit, by declared version, or file by
 file when it has neither.
 
