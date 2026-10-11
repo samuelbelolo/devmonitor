@@ -10,12 +10,10 @@ struct ExtensionsSection: View {
         if !report.isEmpty {
             Divider()
             ExtensionsHeader()
-            // Shown only when it saves commands: with a single source to update, its own command is the same.
-            if report.separateUpdateCommands > 1, let command = report.updateAllCommand {
+            if let updateAll = report.updateAll {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(Strings.updateAll(skills: ExtensionReport.updates(in: report.skills), plugins: ExtensionReport.updates(in: report.plugins)))
-                        .font(.system(size: 11)).foregroundStyle(Palette.idle)
-                    CopyCommandView(command: command)
+                    Text(Strings.updateAll(skills: updateAll.skills, plugins: updateAll.plugins)).font(.system(size: 11)).foregroundStyle(Palette.idle)
+                    CopyCommandView(command: updateAll.command)
                 }
                 .padding(.horizontal, 6)
             }

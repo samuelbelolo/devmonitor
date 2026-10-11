@@ -39,10 +39,10 @@ final class SkillLockTests: XCTestCase {
     }
 
     func testTheTreeAddressNamesTheRepositoryAndTheRef() {
-        XCTAssertEqual(SkillSource(repo: "acme/kit", ref: nil).treeURL?.absoluteString, "https://api.github.com/repos/acme/kit/git/trees/HEAD?recursive=1")
-        XCTAssertEqual(SkillSource(repo: "acme/kit", ref: "feat/x").treeURL?.absoluteString, "https://api.github.com/repos/acme/kit/git/trees/feat%2Fx?recursive=1")
-        XCTAssertNil(SkillSource(repo: "acme/kit/../../users", ref: nil).treeURL)
-        XCTAssertNil(SkillSource(repo: "acme kit", ref: nil).treeURL)
+        XCTAssertEqual(SkillSource(repo: "acme/kit", ref: nil).treeURL(at: nil)?.absoluteString, "https://api.github.com/repos/acme/kit/git/trees/HEAD?recursive=1")
+        XCTAssertEqual(SkillSource(repo: "acme/kit", ref: "feat/x").treeURL(at: nil)?.absoluteString, "https://api.github.com/repos/acme/kit/git/trees/feat%2Fx?recursive=1")
+        XCTAssertNil(SkillSource(repo: "acme/kit/../../users", ref: nil).treeURL(at: nil))
+        XCTAssertNil(SkillSource(repo: "acme kit", ref: nil).treeURL(at: nil))
     }
 
     func testATreeCanBeAskedAtACommit() {

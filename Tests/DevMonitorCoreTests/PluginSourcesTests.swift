@@ -37,7 +37,7 @@ final class PluginSourcesTests: XCTestCase {
         let items = PluginSources.sources(for: twice, marketplaces: marketplaces(officialAge: 1, bragAge: 1))[0].items
         XCTAssertEqual(Set(items.map(\.id)).count, 2)
         XCTAssertEqual(items.map(\.detail), ["1 · local · a", "1 · local · b"])
-        XCTAssertEqual(items[0].command, "claude plugin update figma@official --scope local")
+        XCTAssertEqual(items[0].command, "(cd '/p/a' && claude plugin update figma@official --scope local)")
     }
 
     func testAnUpdateWhoseIdCannotGoIntoACommandIsUnknown() {

@@ -25,9 +25,11 @@ final class ExtensionCommandTests: XCTestCase {
         XCTAssertNil(ExtensionCommand.updatePlugin(plugin("figma", "official", scope: "user; id")))
     }
 
-    func testCommandsAreChainedSoOneFailureDoesNotStopTheOthers() {
-        XCTAssertEqual(ExtensionCommand.chain(["a -g", "b --scope user"]), "a -g; b --scope user")
-        XCTAssertNil(ExtensionCommand.chain([]))
+    func testAProjectInstallIsUpdatedFromItsProjectInASubshell() {
+        let local = InstalledPlugin(name: "figma", marketplace: "official", scope: "local", version: nil, commitSHA: nil, projectPath: "/Users/me/it's mine")
+        XCTAssertEqual(ExtensionCommand.updatePlugin(local), #"(cd '/Users/me/it'\''s mine' && claude plugin update figma@official --scope local)"#)
+        let odd = InstalledPlugin(name: "figma", marketplace: "official", scope: "local", version: nil, commitSHA: nil, projectPath: "/p\nrm -rf ~")
+        XCTAssertNil(ExtensionCommand.updatePlugin(odd))
     }
 
     func testMarketplacesAreRefreshedTogether() {

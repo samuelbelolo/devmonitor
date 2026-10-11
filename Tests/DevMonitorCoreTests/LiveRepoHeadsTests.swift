@@ -9,12 +9,22 @@ final class LiveRepoHeadsTests: XCTestCase {
     }
 
     func testTheRealServerGivesTheHeadCommit() async throws {
-        let commit = await RepoHeads.overTheNetwork(SkillSource(repo: "vercel-labs/skills", ref: nil))
+        let commit = try await head(of: SkillSource(repo: "vercel-labs/skills", ref: nil))
         XCTAssertTrue(SkillSource.isCommitHash(try XCTUnwrap(commit)))
     }
 
     func testTheRealServerGivesABranchCommit() async throws {
-        let commit = await RepoHeads.overTheNetwork(SkillSource(repo: "vercel-labs/skills", ref: "main"))
+        let commit = try await head(of: SkillSource(repo: "vercel-labs/skills", ref: "main"))
         XCTAssertTrue(SkillSource.isCommitHash(try XCTUnwrap(commit)))
+    }
+
+    /// Sends the source's `ls-refs` request over the network and reads the commit from the answer.
+    /// @example try await head(of: SkillSource(repo: "vercel-labs/skills", ref: nil)) // "13e4…"
+    private func head(of source: SkillSource) async throws -> String? {
+        let request = try XCTUnwrap(RepoHeads.request(for: source))
+        let loaded = await RepoTrees.overTheNetwork(request)
+        let answer = try XCTUnwrap(loaded)
+        XCTAssertEqual(answer.status, 200)
+        return RepoHeads.commit(in: answer.data, for: source)
     }
 }

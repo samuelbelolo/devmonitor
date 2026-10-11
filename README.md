@@ -122,7 +122,8 @@ Plugins are compared with the marketplaces already on your Mac, with no request.
   nor skills copied by hand into `~/.claude/skills`.
 - GitHub's API allows 60 anonymous requests per hour for your whole network address, shared with
   `npx skills update`, and an unchanged answer counts too. DevMonitor asks it only when a
-  repository's commit moved, and once per repository at launch. When it refuses, the last answer
+  repository's commit moved, once per repository at launch, and at most every 6 hours for a
+  repository the git server gives no commit for. When it refuses, the last answer
   is kept; private repositories always read as unknown.
 - A plugin's state is as fresh as its marketplace on your Mac: DevMonitor never refreshes one.
   Past seven days it shows the command that does, `claude plugin marketplace update`.

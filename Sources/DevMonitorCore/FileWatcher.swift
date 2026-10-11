@@ -3,9 +3,13 @@ import Foundation
 
 /// Calls back when one of a few files changes, whether a tool rewrites it in place or replaces it; changes that come
 /// within `latency` seconds of each other are told once. It watches the folders of the files that exist when it is
-/// created: a folder made later is not watched.
+/// created: a folder made later is not watched, which `watchesEveryFolder` tells.
 public final class FileWatcher: @unchecked Sendable {
     private var stream: FSEventStreamRef?
+    /// Where the callbacks run, one at a time.
+    private let queue = DispatchQueue(label: "DevMonitor.FileWatcher")
+    /// Whether the folder of every file existed, so every file is watched.
+    public let watchesEveryFolder: Bool
     /// The watched files, by their path with every link resolved, as FSEvents reports them.
     private let files: Set<String>
     private let onChange: @Sendable () -> Void
@@ -14,8 +18,10 @@ public final class FileWatcher: @unchecked Sendable {
     /// @example FileWatcher(files: [NSHomeDirectory() + "/.agents/.skill-lock.json"]) { print("changed") }
     public init?(files: [String], latency: TimeInterval = 1, onChange: @escaping @Sendable () -> Void) {
         let resolved = files.map(Self.resolved)
-        let folders = Set(resolved.map { ($0 as NSString).deletingLastPathComponent }).filter { FileManager.default.fileExists(atPath: $0) }
+        let wanted = Set(resolved.map { ($0 as NSString).deletingLastPathComponent })
+        let folders = wanted.filter { FileManager.default.fileExists(atPath: $0) }
         guard !folders.isEmpty else { return nil }
+        watchesEveryFolder = folders.count == wanted.count
         self.files = Set(resolved)
         self.onChange = onChange
         var context = FSEventStreamContext(version: 0, info: Unmanaged.passUnretained(self).toOpaque(), retain: nil, release: nil, copyDescription: nil)
@@ -29,14 +35,17 @@ public final class FileWatcher: @unchecked Sendable {
             nil, callback, &context, Array(folders) as CFArray, FSEventStreamEventId(kFSEventStreamEventIdSinceNow), latency, flags)
         else { return nil }
         self.stream = stream
-        FSEventStreamSetDispatchQueue(stream, DispatchQueue(label: "DevMonitor.FileWatcher"))
+        FSEventStreamSetDispatchQueue(stream, queue)
         FSEventStreamStart(stream)
     }
 
     deinit {
         guard let stream else { return }
-        FSEventStreamStop(stream)
-        FSEventStreamInvalidate(stream)
+        // On the callbacks' queue: once this returns no callback runs, and none can reach the freed watcher.
+        queue.sync {
+            FSEventStreamStop(stream)
+            FSEventStreamInvalidate(stream)
+        }
         FSEventStreamRelease(stream)
     }
 

@@ -1,12 +1,9 @@
 import Foundation
 
-/// Asks GitHub's git server, the way `git ls-remote` does, which commit a skill source's ref points to. The answer
-/// is a few hundred bytes and does not count against the hourly limit of the API, so it can be asked often; the
-/// tree is then fetched from the API only when the commit changed.
+/// The request that asks GitHub's git server, the way `git ls-remote` does, which commit a skill source's ref
+/// points to, and the reading of its answer. The answer is a few dozen bytes and does not count against the hourly
+/// limit of the API, so it can be asked often.
 public enum RepoHeads {
-    /// Returns the commit a source's ref points to; nil when the server did not answer or has no such ref.
-    public typealias Load = @Sendable (SkillSource) async -> String?
-
     /// Returns the protocol version 2 `ls-refs` request for the source's ref; nil when the source has no address.
     /// @example RepoHeads.request(for: SkillSource(repo: "acme/kit", ref: nil))?.httpMethod // "POST"
     public static func request(for source: SkillSource) -> URLRequest? {
@@ -41,17 +38,5 @@ public enum RepoHeads {
     private static func wantedRefs(of source: SkillSource) -> [String] {
         guard let ref = source.ref else { return ["HEAD"] }
         return ["refs/heads/\(ref)", "refs/tags/\(ref)"]
-    }
-
-    /// A session that keeps its cache and cookies in memory, so no answer is written to disk.
-    private static let session = URLSession(configuration: .ephemeral)
-
-    /// The real loader: one HTTPS request, with no token.
-    public static let overTheNetwork: Load = { source in
-        guard let request = request(for: source),
-              let (data, response) = try? await session.data(for: request),
-              (response as? HTTPURLResponse)?.statusCode == 200
-        else { return nil }
-        return commit(in: data, for: source)
     }
 }

@@ -47,9 +47,10 @@ final class InstalledExtensionsTests: XCTestCase {
             SkillSource(repo: "other/kit", ref: nil): RepoTree(rootSHA: "r", folders: ["skills/wizard": "new", "skills/same": "old"], isTruncated: false),
         ]
         let report = installed.report(trees: trees, checksUpstream: true, now: Date())
-        XCTAssertEqual(report.separateUpdateCommands, 3)
-        XCTAssertEqual(report.updateAllCommand, "npx skills update audit wizard -g -y; claude plugin update figma@official --scope user")
-        XCTAssertNil(installed.report(trees: [:], checksUpstream: false, now: Date()).skills.first?.command)
+        XCTAssertEqual(report.updateAll, UpdateAll(command: "npx skills update audit wizard -g -y; claude plugin update figma@official --scope user", skills: 2, plugins: 1))
+        XCTAssertNil(installed.report(trees: [:], checksUpstream: false, now: Date()).updateAll)
+        let oneSource = installed.report(trees: trees.filter { $0.key.repo == "acme/kit" }, checksUpstream: true, now: Date())
+        XCTAssertEqual(oneSource.updateAll?.command, "npx skills update audit -g -y; claude plugin update figma@official --scope user")
     }
 
     func testMissingFilesGiveAnEmptyReport() {
@@ -57,6 +58,6 @@ final class InstalledExtensionsTests: XCTestCase {
         XCTAssertTrue(installed.skillSources.isEmpty)
         XCTAssertTrue(installed.report(trees: [:], checksUpstream: true, now: Date()).isEmpty)
         XCTAssertTrue(ExtensionReport.empty.isEmpty)
-        XCTAssertNil(ExtensionReport.empty.updateAllCommand)
+        XCTAssertNil(ExtensionReport.empty.updateAll)
     }
 }

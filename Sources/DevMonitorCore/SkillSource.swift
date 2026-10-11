@@ -18,12 +18,9 @@ public struct SkillSource: Hashable, Sendable {
         repo.range(of: #"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"#, options: .regularExpression) != nil
     }
 
-    /// The address of the repository's whole tree at the ref; nil when the repository is not written `owner/name`.
-    public var treeURL: URL? { treeURL(at: nil) }
-
     /// Returns the address of the repository's whole tree at a commit, or at the ref when `commit` is nil; nil when
     /// the repository is not written `owner/name` or the commit is not a hash.
-    /// @example source.treeURL(at: "13e4…")?.lastPathComponent // "13e4…"
+    /// @example SkillSource(repo: "acme/kit", ref: nil).treeURL(at: "13e4063a1cf913f5606d57d42ab83a86f5001e04") // https://api.github.com/repos/acme/kit/git/trees/13e4063a1cf913f5606d57d42ab83a86f5001e04?recursive=1
     public func treeURL(at commit: String?) -> URL? {
         guard isPlainRepo else { return nil }
         if let commit {
