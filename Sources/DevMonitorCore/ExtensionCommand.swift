@@ -21,6 +21,13 @@ public enum ExtensionCommand {
         return "claude plugin update \(plugin.pluginID) --scope \(plugin.scope)"
     }
 
+    /// Returns one line that runs the commands one after the other, each whatever the previous one gave; nil when
+    /// there is none.
+    /// @example ExtensionCommand.chain(["npx skills update audit -g -y", "claude plugin update figma@official --scope user"]) // "npx skills update audit -g -y; claude plugin update figma@official --scope user"
+    public static func chain(_ commands: [String]) -> String? {
+        commands.isEmpty ? nil : commands.joined(separator: "; ")
+    }
+
     /// Whether a text is one shell word with no special character, and not an option.
     /// @example ExtensionCommand.isPlainWord("-g") // false
     public static func isPlainWord(_ text: String) -> Bool {

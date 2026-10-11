@@ -1,8 +1,10 @@
 import Foundation
 
-/// Asks GitHub for the tree of each skill repository, anonymously. It remembers each answer and its ETag for as
-/// long as the app runs: an unchanged repository then answers 304, which does not count against the hourly limit
-/// of anonymous requests, and a refused or failed request leaves the last tree in place.
+/// Asks GitHub for the tree of each skill repository, anonymously. The anonymous API allows 60 requests an hour per
+/// address, shared with the `skills` tool, and a 304 counts like any other answer. So the git server is asked first
+/// which commit the ref points to, outside that limit; the API is asked only when the commit is not the one of the
+/// tree already known. Answers are remembered for as long as the app runs, and a refused or failed request leaves
+/// the last tree in place.
 public actor RepoTrees {
     /// Sends a request and returns the body, the status and the ETag of the answer; nil when nothing came back.
     public typealias Load = @Sendable (URLRequest) async -> (data: Data, status: Int, etag: String?)?
@@ -10,22 +12,26 @@ public actor RepoTrees {
     private struct Answer: Sendable {
         let etag: String?
         let tree: RepoTree
+        /// The commit the tree was read at; nil when the git server did not say.
+        let commit: String?
     }
 
     /// What GitHub said about one source this time.
     private enum Reply: Sendable {
         case changed(Answer)
-        /// A 304: the tree already known is still the current one.
-        case unchanged
+        /// The tree already known is still the current one, now known to be at this commit.
+        case unchanged(commit: String?)
         case none
     }
 
     private var known: [SkillSource: Answer] = [:]
     /// When GitHub last answered about at least one source, with a new tree or with "unchanged"; nil until it does.
     public private(set) var lastAnswered: Date?
+    private let heads: RepoHeads.Load
     private let load: Load
 
-    public init(load: @escaping Load = RepoTrees.overTheNetwork) {
+    public init(heads: @escaping RepoHeads.Load = RepoHeads.overTheNetwork, load: @escaping Load = RepoTrees.overTheNetwork) {
+        self.heads = heads
         self.load = load
     }
 
@@ -34,10 +40,11 @@ public actor RepoTrees {
     public func fetch(_ sources: [SkillSource]) async -> [SkillSource: RepoTree] {
         let wanted = Set(sources)
         let known = known
+        let heads = heads
         let load = load
         let replies = await withTaskGroup(of: (SkillSource, Reply).self) { group in
             for source in wanted {
-                group.addTask { (source, await Self.reply(for: source, etag: known[source]?.etag, load: load)) }
+                group.addTask { (source, await Self.reply(for: source, known: known[source], heads: heads, load: load)) }
             }
             var replies: [(SkillSource, Reply)] = []
             for await reply in group { replies.append(reply) }
@@ -48,26 +55,31 @@ public actor RepoTrees {
             case .changed(let answer):
                 self.known[source] = answer
                 lastAnswered = Date()
-            case .unchanged where self.known[source] != nil:
+            case .unchanged(let commit):
+                guard let last = self.known[source] else { break }
+                self.known[source] = Answer(etag: last.etag, tree: last.tree, commit: commit ?? last.commit)
                 lastAnswered = Date()
-            case .unchanged, .none:
+            case .none:
                 break
             }
         }
         return self.known.filter { wanted.contains($0.key) }.mapValues(\.tree)
     }
 
-    /// Asks GitHub about one source: a new tree, "unchanged" on a 304, or nothing when it is refused, unreadable or has no address.
-    /// @example await reply(for: source, etag: "\"v1\"", load: load) // .unchanged on a 304
-    private static func reply(for source: SkillSource, etag: String?, load: Load) async -> Reply {
-        guard let url = source.treeURL else { return .none }
+    /// Asks about one source: "unchanged" when its commit is the known one, else the API for the tree at that commit
+    /// (or at the ref when the git server did not answer); nothing when refused, unreadable or without an address.
+    /// @example await reply(for: source, known: answer, heads: heads, load: load) // .unchanged(commit: "13e4…")
+    private static func reply(for source: SkillSource, known: Answer?, heads: RepoHeads.Load, load: Load) async -> Reply {
+        let commit = await heads(source)
+        if let commit, commit == known?.commit { return .unchanged(commit: commit) }
+        guard let url = source.treeURL(at: commit) else { return .none }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 10)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        if let etag { request.setValue(etag, forHTTPHeaderField: "If-None-Match") }
+        if let etag = known?.etag { request.setValue(etag, forHTTPHeaderField: "If-None-Match") }
         guard let response = await load(request) else { return .none }
-        if response.status == 304 { return .unchanged }
+        if response.status == 304 { return .unchanged(commit: commit) }
         guard response.status == 200, let tree = RepoTree(parsing: response.data) else { return .none }
-        return .changed(Answer(etag: response.etag, tree: tree))
+        return .changed(Answer(etag: response.etag, tree: tree, commit: commit))
     }
 
     /// A session that keeps its cache and cookies in memory, so no answer is written to disk.

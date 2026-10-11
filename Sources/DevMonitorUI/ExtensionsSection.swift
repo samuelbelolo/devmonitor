@@ -9,13 +9,15 @@ struct ExtensionsSection: View {
         let report = extensions.report
         if !report.isEmpty {
             Divider()
-            HStack(alignment: .firstTextBaseline) {
-                SectionTitle(title: Strings.extensions)
-                Spacer()
-                if let checkedAt = extensions.checkedAt {
-                    let seconds = Int(Date().timeIntervalSince(checkedAt))
-                    Text(Strings.checked(ago: DisplayFormat.duration(seconds: seconds))).font(.system(size: 11)).foregroundStyle(.tertiary)
+            ExtensionsHeader()
+            // Shown only when it saves commands: with a single source to update, its own command is the same.
+            if report.separateUpdateCommands > 1, let command = report.updateAllCommand {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(Strings.updateAll(skills: ExtensionReport.updates(in: report.skills), plugins: ExtensionReport.updates(in: report.plugins)))
+                        .font(.system(size: 11)).foregroundStyle(Palette.idle)
+                    CopyCommandView(command: command)
                 }
+                .padding(.horizontal, 6)
             }
             if !report.skills.isEmpty {
                 ExtensionKindView(kind: .skills, sources: report.skills)

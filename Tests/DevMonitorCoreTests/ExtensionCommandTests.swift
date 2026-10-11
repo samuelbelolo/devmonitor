@@ -25,6 +25,11 @@ final class ExtensionCommandTests: XCTestCase {
         XCTAssertNil(ExtensionCommand.updatePlugin(plugin("figma", "official", scope: "user; id")))
     }
 
+    func testCommandsAreChainedSoOneFailureDoesNotStopTheOthers() {
+        XCTAssertEqual(ExtensionCommand.chain(["a -g", "b --scope user"]), "a -g; b --scope user")
+        XCTAssertNil(ExtensionCommand.chain([]))
+    }
+
     func testMarketplacesAreRefreshedTogether() {
         XCTAssertEqual(ExtensionCommand.refreshMarketplaces, "claude plugin marketplace update")
     }

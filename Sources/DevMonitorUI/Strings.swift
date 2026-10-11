@@ -146,6 +146,15 @@ enum Strings {
         french ? "vérifié il y a \(duration)" : "checked \(duration) ago"
     }
 
+    static let checkNow = french ? "Vérifier maintenant" : "Check now"
+
+    /// Returns the title of the command that updates everything, with what it updates.
+    /// @example Strings.updateAll(skills: 8, plugins: 1) // "Update everything: 8 skills, 1 plugin"
+    static func updateAll(skills: Int, plugins: Int) -> String {
+        let parts = [(skills, "skill"), (plugins, "plugin")].filter { $0.0 > 0 }.map { "\($0.0) \($0.1)\($0.0 > 1 ? "s" : "")" }
+        return (french ? "Tout mettre à jour : " : "Update everything: ") + parts.joined(separator: ", ")
+    }
+
     /// Returns up to three names, then how many more there are.
     /// @example Strings.names(["a", "b", "c", "d", "e"]) // "a, b, c and 2 more"
     static func names(_ names: [String]) -> String {

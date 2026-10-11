@@ -5,24 +5,34 @@ public struct InstalledExtensions: Sendable {
     public let skills: [InstalledSkill]
     public let plugins: [InstalledPlugin]
     public let marketplaces: [String: Marketplace]
+    /// False when the skills lock file exists but is not one, as while the `skills` tool rewrites it in place.
+    public let isSkillLockReadable: Bool
 
-    public init(skills: [InstalledSkill], plugins: [InstalledPlugin], marketplaces: [String: Marketplace]) {
+    public init(skills: [InstalledSkill], plugins: [InstalledPlugin], marketplaces: [String: Marketplace], isSkillLockReadable: Bool = true) {
         self.skills = skills
         self.plugins = plugins
         self.marketplaces = marketplaces
+        self.isSkillLockReadable = isSkillLockReadable
     }
 
-    /// Reads the global skills lock file and Claude Code's plugin files under a home folder; a missing file reads as empty.
+    /// The files whose change can change what is installed, by path from the home folder.
+    public static let watchedFiles = [".agents/.skill-lock.json", ".claude/plugins/installed_plugins.json", ".claude/plugins/known_marketplaces.json"]
+
+    /// Reads the global skills lock file and Claude Code's plugin files under a home folder; a missing file reads as
+    /// empty, and so does a skills lock file that is not one, with `isSkillLockReadable` false.
     /// @example InstalledExtensions.read().plugins.count // 22
     public static func read(
         home: String = NSHomeDirectory(),
         contents: (String) -> Data? = { FileManager.default.contents(atPath: $0) }
     ) -> InstalledExtensions {
         let plugins = home + "/.claude/plugins"
+        let lock = contents(home + "/.agents/.skill-lock.json")
+        let skills = lock.flatMap(SkillLock.skills)
         return InstalledExtensions(
-            skills: contents(home + "/.agents/.skill-lock.json").map(SkillLock.skills) ?? [],
+            skills: skills ?? [],
             plugins: contents(plugins + "/installed_plugins.json").map(InstalledPlugins.plugins) ?? [],
-            marketplaces: contents(plugins + "/known_marketplaces.json").map { Marketplaces.read(known: $0, contents: contents) } ?? [:])
+            marketplaces: contents(plugins + "/known_marketplaces.json").map { Marketplaces.read(known: $0, contents: contents) } ?? [:],
+            isSkillLockReadable: lock == nil || skills != nil)
     }
 
     /// The GitHub repositories the skills come from, each once.

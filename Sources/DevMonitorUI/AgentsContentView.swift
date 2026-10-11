@@ -45,7 +45,7 @@ public struct AgentsContentView: View {
         .onAppear {
             store.setWindow(.agents, isOpen: true)
             Task { await versions.refreshInstalled() }
-            Task { await extensions.refresh(fetchingUpstream: false) }
+            Task { await extensions.windowOpened() }
         }
         .onDisappear { store.setWindow(.agents, isOpen: false) }
     }

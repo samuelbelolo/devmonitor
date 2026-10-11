@@ -8,7 +8,8 @@ struct CopyCommandView: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text(command).font(.system(size: 11.5, design: .monospaced)).textSelection(.enabled)
+            // A long command is cut after a few lines; the button still copies all of it.
+            Text(command).font(.system(size: 11.5, design: .monospaced)).lineLimit(4).truncationMode(.middle).textSelection(.enabled)
             Spacer(minLength: 6)
             Button(action: copy) { Text(isCopied ? Strings.copied : Strings.copy).font(.system(size: 11, weight: .semibold)) }
                 .buttonStyle(.plain)
