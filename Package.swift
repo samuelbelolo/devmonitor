@@ -8,7 +8,7 @@ let package = Package(
         .target(name: "DevMonitorCore"),
         .target(name: "DevMonitorUI", dependencies: ["DevMonitorCore"]),
         .executableTarget(name: "DevMonitorApp", dependencies: ["DevMonitorCore", "DevMonitorUI"]),
-        .executableTarget(name: "devmon-snapshot", dependencies: ["DevMonitorUI"]),
+        .executableTarget(name: "devmon-snapshot", dependencies: ["DevMonitorCore", "DevMonitorUI"]),
         .executableTarget(name: "devmon-dump", dependencies: ["DevMonitorCore"]),
         .testTarget(name: "DevMonitorCoreTests", dependencies: ["DevMonitorCore"]),
         .testTarget(name: "DevMonitorUITests", dependencies: ["DevMonitorUI"]),

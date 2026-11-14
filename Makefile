@@ -1,6 +1,6 @@
 APP := build/DevMonitor.app
 
-.PHONY: help app run stop restart install test dump snapshot clean
+.PHONY: help app run stop restart install test dump snapshot media clean
 
 help: ## List the commands
 	@grep -E '^[a-z]+:.*##' $(MAKEFILE_LIST) | awk -F ':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -27,6 +27,9 @@ dump: ## Print in the terminal what the app would show
 
 snapshot: ## Render the memory and agents windows to build/
 	@mkdir -p build && swift run devmon-snapshot build/snapshot.png && swift run devmon-snapshot build/agents.png agents && open build/snapshot.png build/agents.png
+
+media: ## Render the documentation's images to docs/media/ from sample data
+	@swift run devmon-snapshot sample docs/media -AppleLanguages "(en)" && ls docs/media/*.png
 
 clean: ## Remove build output
 	@rm -rf .build build

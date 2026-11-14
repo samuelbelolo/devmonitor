@@ -26,6 +26,7 @@ public struct MenuContentView: View {
                 settingsMenu
             }
             MemoryMeter(groups: store.groups, total: store.totalBytes)
+            if let swap = store.swap { SwapLineView(swap: swap, startedAt: store.startedAt) }
             if store.groups.isEmpty {
                 Text(Strings.nothingRunning).foregroundStyle(.secondary).frame(maxWidth: .infinity).padding(.vertical, 18)
             } else {

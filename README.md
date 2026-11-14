@@ -1,31 +1,34 @@
-# DevMonitor
+<h1 align="center">DevMonitor</h1>
 
-A macOS menu bar app for people who run several projects and coding agents at once. It shows
-what your dev setup is really running — dev servers, workers, MCP servers, Docker Compose
-containers — grouped by git repository, with the memory each one holds, and lets you stop it.
-A second item counts your agent sessions and tells you when an agent has a new version.
+<p align="center">
+  <b>See what your dev setup is really running, from the macOS menu bar.</b><br>
+  Dev servers, workers, MCP servers and Docker Compose containers, grouped by git repository,<br>
+  with the memory each one holds and two clicks to stop it.
+</p>
 
-[![DevMonitor: the agents window, with sessions, versions and extensions, and the memory window, grouped by repo](docs/media/demo.jpg)](docs/media/demo.mp4)
+<p align="center">
+  <img alt="macOS 14 or later" src="https://img.shields.io/badge/macOS-14%2B-111111?logo=apple&logoColor=white">
+  <img alt="Swift 5.10 or later" src="https://img.shields.io/badge/Swift-5.10%2B-F05138?logo=swift&logoColor=white">
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-3ddc97"></a>
+</p>
 
-*Click the image to watch the 23-second demo.*
+<p align="center">
+  <a href="docs/media/demo.mp4"><img src="docs/media/demo.gif" width="960" alt="The demo: the memory window lists the projects with their memory, orphan servers are stopped in two clicks, then the agents window shows the sessions and the updates"></a>
+</p>
 
-- [Requirements](#requirements)
-- [Install](#install)
-- [Update](#update)
-- [Use](#use)
-- [Safety](#safety)
-- [Privacy](#privacy)
-- [Limits](#limits)
-- [Development](#development)
-- [Credits and license](#credits-and-license)
+<p align="center"><sub>The 23-second demo. Click it for the video with sound.</sub></p>
 
-## Requirements
+DevMonitor is for people who run several projects and coding agents at once. One menu bar item
+shows the memory your projects hold and lets you stop what you forgot. A second one counts your
+agent sessions and tells you when an agent, a skill or a plugin has a new version.
 
-- macOS 14 or later.
-- Apple's command line developer tools (`xcode-select --install`): the app is built on your Mac.
-- Optional: Docker (Desktop, OrbStack, Colima or Rancher Desktop) for the container rows.
-- Optional: one or more coding agents — Claude Code, Codex, Gemini CLI, Cursor Agent, opencode,
-  Aider, Amp — for the agents item.
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#what-it-shows">What it shows</a> ·
+  <a href="#guides">Guides</a> ·
+  <a href="#safety-and-privacy">Safety and privacy</a> ·
+  <a href="#development">Development</a>
+</p>
 
 ## Install
 
@@ -35,105 +38,106 @@ Paste this in Terminal, without `sudo`:
 curl -fsSL https://raw.githubusercontent.com/samuelbelolo/devmonitor/main/scripts/install.sh | bash
 ```
 
-It downloads the source, builds the app (about a minute), copies it to `/Applications` (or
-`~/Applications`) and launches it.
+It downloads the source, builds the app on your Mac (about a minute), copies it to
+`/Applications` (or `~/Applications`) and launches it. Run the same command again to update.
 
-To start it with your Mac, open the `…` menu of the app and tick **Launch at login**; macOS
-lists it under **System Settings → General → Login Items**.
+You need macOS 14 or later and Apple's command line developer tools (`xcode-select --install`).
+Docker and coding agents are optional. Launch at login, updating, uninstalling and the common
+problems are in the [install guide](docs/install.md).
 
-To uninstall, untick **Launch at login**, choose **Quit**, and delete the app.
+## What it shows
 
-The app is built locally because it is not notarized by Apple: a downloaded copy would be
-blocked by Gatekeeper. From a clone, `make install` does the same.
+### Everything running, grouped by repository
 
-## Update
+<img align="right" width="400" src="docs/media/memory-window.png" alt="The memory window: 19.0 GB used by 4 projects, each project with its services, their memory, their ports and the orphan and idle tags">
 
-Run the install command again:
+The memory item (`19.0 GB`) opens a window with one group per repository, worktrees and Compose
+containers included. Each line is a service with its memory and its ports. Two tags point at
+what you probably forgot:
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/samuelbelolo/devmonitor/main/scripts/install.sh | bash
-```
+- `orphan`: its parent died.
+- `idle`: no CPU for 10 minutes.
 
-It builds the latest version, quits the running app, replaces it and starts the new one. Your
-settings stay. From a clone: `git pull`, then `make install`.
+MCP servers have their own collapsed group.
 
-The app does not tell you when a new version of itself is out: watch the repository's releases
-on GitHub (**Watch → Custom → Releases**) to be notified. If **Launch at login** no longer
-starts it after an update, untick it and tick it again: each build is signed anew on your Mac.
+**Stop it in two clicks.** The cross on a line, then **Confirm**, stops that service and
+everything it started. **Stop** on a project stops its services and its containers.
+**Stop N idle** stops the idle services counted at the first click. A process still running
+5 seconds later gets a **Force quit** button.
 
-## Use
+[The memory window, in detail →](docs/memory-window.md)
 
-**The memory item** (`19.0 GB`) lists one group per repository — worktrees and Compose
-containers included — with each service's memory, ports, and two tags: `orphan` (its parent
-died) and `idle` (no CPU for 10 minutes). MCP servers have their own collapsed group.
+<br clear="right">
 
-- Cross on a line, then **Confirm**: stops that service and everything it started.
-- **Stop**, then **Confirm**, on a project: stops its services and its containers.
-- **Stop N idle**, then **Confirm**: stops the idle services counted at the first click.
-- A process still running 5 seconds later gets a **Force quit** button.
+### Swap, and when only a restart helps
 
-**The agents item** (`✳ ֍ 12`) shows the logo of each agent with a session side by side, then
-their total number of sessions. A Codex that another agent started (Claude running `codex exec`
-for a review) counts as a session too, "launched by Claude". Each logo turns while its agent
-works, and an orange dot means a new version is published. Its window lists:
+<img align="right" width="400" src="docs/media/swap-line-states.png" alt="The Swap line in its three states: grey at 1.2 GB, orange at 14.3 GB, red at 30.5 GB with the note that only a restart gives this memory back">
+
+A Mac can crawl while macOS reports plenty of free memory: what it lacks sits in the swap.
+Under the total, a **Swap** line is always shown: grey up to a quarter of the Mac's memory,
+orange above it, red above half. A red line says how long the Mac has been up and that only a
+restart gives this memory back.
+
+The chip in the menu bar takes the same colour:
+
+<img width="170" src="docs/media/menu-bar.png" alt="The menu bar items with a white memory chip"> <img width="170" src="docs/media/menu-bar-swap-high.png" alt="The same items with an orange memory chip"> <img width="170" src="docs/media/menu-bar-swap-critical.png" alt="The same items with a red memory chip">
+
+[The Swap line, in detail →](docs/memory-window.md#the-swap-line)
+
+<br clear="right">
+
+### Every agent session, and the update you have not run
+
+<img align="right" width="360" src="docs/media/agents-window.png" alt="The agents window: 9 sessions by project, Claude with version 2.1.291 available and the command to update it, then the skills and plugins with an update">
+
+The agents item (`✳ 9`) shows the logo of each agent with a session, then their total number of
+sessions. Each logo turns while its agent works, and an orange dot means a new version is
+published. Its window lists:
 
 - the sessions by project, each one marked as working or waiting;
-- each installed agent's version, the command to update it (**Copy**), and the sessions still
-  running an older version, which need a restart to pick up an update;
-- the skills installed with `npx skills` and the plugins installed with `claude plugin`, grouped
-  by repository or marketplace: which ones have an update, and the command to run (**Copy**).
-  A skill is "moved" when its folder no longer exists in its repository.
+- each installed agent's version and the command to update it (**Copy**);
+- the sessions still running an older version, which need a restart to pick up an update.
 
-## Safety
+It knows Claude Code, Codex, Gemini CLI, Cursor Agent, opencode, Aider and Amp.
 
-DevMonitor only signals processes it listed, one by one, after checking each one is still the
-same program. It never touches:
+[The agents window, in detail →](docs/agents-window.md)
 
-- apps and system processes;
-- coding agent sessions, and whatever wraps one;
-- shells you type in, terminal multiplexers, `ssh`, terminal editors and virtual machine hosts;
-- process groups, or a process that changed since the last scan.
+### Skills and plugins with an update
 
-It runs as your user, refuses to run as root, and asks for a second click before every stop.
-Stopping an MCP server breaks the agent session that uses it, so MCP servers are never part of
-**Stop N idle**.
+The same window lists the skills installed with `npx skills` and the plugins installed with
+`claude plugin`, grouped by repository or marketplace. It says which ones have an update and
+gives one command that updates everything, or one command per source (**Copy**).
 
-## Privacy
+[Skills and plugins, in detail →](docs/extensions.md)
 
-DevMonitor reads your own processes' command lines to name them, on your Mac only, and never
-shows the value of an option, a `KEY=value` argument, a URL or a token. Nothing is stored.
+<br clear="right">
 
-The only network requests are the version checks. Every 6 hours, the app asks the npm registry
-(PyPI for Aider, and Anthropic's download server for a Claude Code set up by its own installer,
-which is where `claude update` looks) for the latest version of each installed agent. Every 15 minutes, when the
-agents window opens after 5 minutes without a check, and when you press ↻, it asks GitHub's git
-server which commit each repository your skills come from is at, then GitHub's API for the file
-tree of the repositories whose commit moved. Only the package or repository name is sent, with
-no account or token. Turn both off in the agents window: `…` → **Check for new versions**.
-Plugins are compared with the marketplaces already on your Mac, with no request.
+## Guides
 
-## Limits
+| Guide | What is in it |
+| --- | --- |
+| [Install, update, uninstall](docs/install.md) | Requirements, launch at login, updating, removing the app, common problems |
+| [The memory window](docs/memory-window.md) | Reading the list, stopping services, the Swap line |
+| [The agents window](docs/agents-window.md) | Sessions, versions, the update commands, the settings |
+| [Skills and plugins](docs/extensions.md) | What is listed, when updates are looked for, the commands |
+| [Safety and privacy](docs/safety-and-privacy.md) | What DevMonitor never stops, what it reads, every request it makes |
+| [Development](docs/development.md) | Building, testing, the layout of the code, regenerating these images |
 
-- **Idle means "no CPU"**, not "unused": read the tagged lines before **Stop N idle**.
-- A program waiting in a terminal that is not on the protected list (a REPL, `psql`) is listed
-  like a server.
-- An MCP server whose agent died is recognised by its command name only.
-- DevMonitor does not know where Cursor Agent publishes its versions, so its status shows as unknown.
-- Only global skills are listed (`~/.agents/.skill-lock.json`), not the ones a project installs,
-  nor skills copied by hand into `~/.claude/skills`.
-- GitHub's API allows 60 anonymous requests per hour for your whole network address, shared with
-  `npx skills update`, and an unchanged answer counts too. DevMonitor asks it only when a
-  repository's commit moved, once per repository at launch, and at most every 6 hours for a
-  repository the git server gives no commit for. When it refuses, the last answer
-  is kept, and a skill updated since that answer reads as up to date until GitHub answers again;
-  private repositories always read as unknown.
-- A plugin's state is as fresh as its marketplace on your Mac: DevMonitor never refreshes one.
-  Past seven days it shows the command that does, `claude plugin marketplace update`.
-- A plugin pinned to a commit of another repository shows an update as soon as its marketplace
-  pins a newer commit, unless the catalog gives its version. If the plugin's version did not
-  change, `claude plugin update` answers that it is already the latest.
-- It is not a security tool: a program can keep out of the list by naming itself like a
-  protected one.
+Each guide ends with the limits of what it describes.
+
+## Safety and privacy
+
+- DevMonitor only signals processes it listed, one by one, after checking each one is still the
+  same program, and asks for a second click before every stop.
+- It never touches apps, system processes, coding agent sessions or the shells you type in.
+  MCP servers are never part of **Stop N idle**.
+- It runs as your user and refuses to run as root.
+- It reads your own processes' command lines on your Mac only, never shows the value of an
+  option, a `KEY=value` argument, a URL or a token, and stores nothing.
+- Its only network requests are the version checks, sent with no account or token. One switch
+  turns them off.
+
+The full lists are in [Safety and privacy](docs/safety-and-privacy.md).
 
 ## Development
 
@@ -141,19 +145,13 @@ Plugins are compared with the marketplaces already on your Mac, with no request.
 make run        # build and launch from build/
 make test       # run the tests
 make dump       # print what the app sees
-make snapshot   # render both windows to build/
+make snapshot   # render both windows to build/ from this Mac
+make media      # render the images of this page to docs/media/ from sample data
 make help       # every command
 ```
 
-`Sources/DevMonitorCore` holds the scanning, grouping, stop and version logic; `DevMonitorUI`
-the SwiftUI views and stores; `DevMonitorApp` the entry point. Processes are read through
-`libproc` (no `ps` or `lsof`), every 3 seconds while a window is open and every 30 seconds
-otherwise; Docker through its CLI, against the local socket only. Skills are compared the way
-`skills update` does it: the git tree hash of each skill's folder against GitHub's trees API.
-The skills lock file and Claude Code's plugin files are watched, so the list follows an update
-as soon as the command that made it is done.
-A plugin is compared with its marketplace's catalog: by commit, by declared version, or file by
-file when it has neither.
+The layout of the code, how each thing is read and how to regenerate the images are in
+[Development](docs/development.md).
 
 ## Credits and license
 

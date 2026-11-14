@@ -50,6 +50,17 @@ enum Strings {
         french ? "Arrêter \(count) au repos · libère \(memory)" : "Stop \(count) idle · frees \(memory)"
     }
 
+    static let swap = "Swap"
+    static let critical = french ? "critique" : "critical"
+
+    /// Returns the call to restart shown under a critical swap, with how long the Mac has been up when it is known.
+    /// @example Strings.restartFreesSwap(upFor: "11 d") // "Mac up for 11 d. Only a restart gives this memory back."
+    static func restartFreesSwap(upFor duration: String?) -> String {
+        let advice = french ? "Seul un redémarrage rend cette mémoire." : "Only a restart gives this memory back."
+        guard let duration else { return advice }
+        return (french ? "Mac allumé depuis \(duration). " : "Mac up for \(duration). ") + advice
+    }
+
     static let byProject = french ? "Par projet" : "By project"
     static let versions = "Versions"
     static let outsideProjects = french ? "Hors projet" : "Outside any project"
