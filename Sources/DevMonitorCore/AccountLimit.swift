@@ -7,8 +7,10 @@ public struct AccountLimit: Sendable, Equatable {
         case week
         /// The week on one model, such as Fable.
         case weekOnModel(String)
-        /// The five hours Claude counts on top of the week.
+        /// Five hours, counted on top of the week.
         case fiveHours
+        /// A window of another length, given in seconds, such as a day.
+        case window(seconds: Int)
         /// A cap DevMonitor does not know, by the name the provider gives it. It counts like the others: a cap the
         /// provider reports may be the one that stops the account.
         case other(String)

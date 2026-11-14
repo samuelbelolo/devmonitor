@@ -19,7 +19,7 @@ public enum ClaudeUsageAnswer {
         if let fiveHours = answer.fiveHour.flatMap({ window($0, kind: .fiveHours) }) {
             limits.append(fiveHours)
         }
-        return AccountUsage(limits: limits)
+        return AccountUsage(limits: limits, resetCredits: ClaudeResetGrants.credits(from: body, limits: limits))
     }
 
     /// Returns the limit an entry of `limits[]` describes; nil when it gives no share used.

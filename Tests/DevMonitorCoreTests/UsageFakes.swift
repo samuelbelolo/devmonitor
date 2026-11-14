@@ -4,7 +4,7 @@ import Foundation
 /// Stand-ins for the provider, the keychain and the clock, so the sign-in and the reads run without either.
 enum UsageFakes {
     static let start = Date(timeIntervalSince1970: 1_795_000_000)
-    static let account = ClaudeAccountID(account: "11111111-2222-3333-4444-555555555555", organization: "66666666-7777-8888-9999-000000000000", email: "dev@example.com")
+    static let account = AccountID(account: "11111111-2222-3333-4444-555555555555", organization: "66666666-7777-8888-9999-000000000000", email: "dev@example.com")
 
     /// Returns a sign-in whose access token ends `accessLeft` seconds after `start` and whose own deadline is 28 days later.
     /// @example signIn("a1", "r1").accessToken // "a1"
@@ -63,8 +63,8 @@ actor FakeProvider: HTTPTransport {
     /// How long each answer takes, so that two reads can overlap.
     private let delay: Duration
 
-    init(usage: [Reply] = [], renewal: [Reply] = [], signIn: [Reply] = [], delay: Duration = .zero) {
-        replies = ["usage": usage, "renewal": renewal, "signIn": signIn]
+    init(usage: [Reply] = [], renewal: [Reply] = [], signIn: [Reply] = [], spend: [Reply] = [], delay: Duration = .zero) {
+        replies = ["usage": usage, "renewal": renewal, "signIn": signIn, "spend": spend]
         self.delay = delay
     }
 
@@ -88,10 +88,12 @@ actor FakeProvider: HTTPTransport {
         sent.filter { Self.kind(of: $0) == kind }
     }
 
-    /// Tells a usage read, a renewal and a sign-in apart.
+    /// Tells a usage read, a renewal, a sign-in and the spending of a reset apart.
     /// @example kind(of: usageRequest) // "usage"
     static func kind(of request: URLRequest) -> String {
         guard request.httpMethod == "POST" else { return "usage" }
+        let path = request.url?.path ?? ""
+        if path.hasSuffix("/reset_rate_limits") || path.hasSuffix("/consume") { return "spend" }
         let body = (try? JSONSerialization.jsonObject(with: request.httpBody ?? Data())) as? [String: String]
         return body?["grant_type"] == "refresh_token" ? "renewal" : "signIn"
     }

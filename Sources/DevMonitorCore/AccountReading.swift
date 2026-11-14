@@ -14,6 +14,8 @@ public struct AccountReading: Sendable, Equatable {
 
     public private(set) var usage: AccountUsage?
     public private(set) var readAt: Date?
+    /// When the account's resets were last read; nil when they never were.
+    public private(set) var creditsReadAt: Date?
     public private(set) var problem: Problem?
 
     public static let empty = AccountReading(usage: nil, readAt: nil, problem: nil)
@@ -30,7 +32,12 @@ public struct AccountReading: Sendable, Equatable {
     public mutating func apply(_ outcome: UsageReadOutcome, at now: Date) {
         switch outcome {
         case .read(let fresh):
-            usage = fresh
+            if fresh.resetCredits == nil {
+                usage = fresh.with(resetCredits: usage?.resetCredits)
+            } else {
+                usage = fresh
+                creditsReadAt = now
+            }
             readAt = now
             problem = nil
         case .needsSignIn:
@@ -46,5 +53,11 @@ public struct AccountReading: Sendable, Equatable {
     /// @example reading.isDue(at: Date()) // true
     public func isDue(at now: Date) -> Bool {
         readAt.map { now.timeIntervalSince($0) > Self.freshness } ?? true
+    }
+
+    /// Whether the window should ask for the account's resets when it opens: never read, or more than two minutes ago.
+    /// @example reading.areCreditsDue(at: Date()) // true
+    public func areCreditsDue(at now: Date) -> Bool {
+        creditsReadAt.map { now.timeIntervalSince($0) > Self.freshness } ?? true
     }
 }

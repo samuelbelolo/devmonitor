@@ -39,18 +39,28 @@ public enum SampleUsage {
     static func store(confirming: Bool = false) -> UsageStore {
         let now = Date()
         let friday = now.addingTimeInterval(5 * 86_400)
+        let codex = AccountID(provider: .codex, account: "sample-codex", organization: "", email: "dev@example.com")
         let accounts = [
             account("personal@example.com", name: "Perso", endsIn: 20),
             account("work@example.com", name: nil, endsIn: 2),
             account("team@example.com", name: "Team", endsIn: 9),
+            TrackedAccount(account: codex, name: "Perso", signInEndsAt: nil),
+            account("clients@example.com", name: nil, endsIn: 25),
+            account("labs@example.com", name: nil, endsIn: 25),
         ]
+        let fableReset = ResetCredit(id: "sample-fable", left: 1, clears: [.weekOnModel("Fable")], shownOn: .weekOnModel("Fable"), endsAt: now.addingTimeInterval(115 * 86_400))
+        let codexResets = ResetCredit(id: nil, left: 3, clears: [], shownOn: .week, endsAt: nil)
         let readings = [
-            accounts[0].id: AccountReading(usage: usage([(.week, 15), (.weekOnModel("Fable"), 17)], resetsAt: friday), readAt: now.addingTimeInterval(-180), problem: nil),
+            accounts[0].id: AccountReading(usage: usage([(.week, 15), (.weekOnModel("Fable"), 17)], resetsAt: friday, credits: [fableReset]), readAt: now.addingTimeInterval(-180), problem: nil),
             accounts[1].id: AccountReading(usage: usage([(.week, 82), (.weekOnModel("Fable"), 96)], resetsAt: friday), readAt: now.addingTimeInterval(-240), problem: nil),
             accounts[2].id: AccountReading(usage: usage([(.week, 40), (.weekOnModel("Fable"), 30)], resetsAt: friday), readAt: now.addingTimeInterval(-6 * 3600), problem: .needsSignIn),
+            accounts[3].id: AccountReading(usage: usage([(.week, 55)], resetsAt: now.addingTimeInterval(4 * 86_400), credits: [codexResets]), readAt: now.addingTimeInterval(-120), problem: nil),
+            accounts[4].id: AccountReading(usage: usage([(.week, 5), (.weekOnModel("Fable"), 2)], resetsAt: friday), readAt: now.addingTimeInterval(-60), problem: nil),
+            accounts[5].id: AccountReading(usage: usage([(.week, 61), (.weekOnModel("Fable"), 44)], resetsAt: friday), readAt: now.addingTimeInterval(-60), problem: nil),
         ]
-        guard confirming else { return UsageStore(sample: accounts, readings: readings) }
-        let newcomer = ClaudeAccountID(account: "sample-new", organization: "sample-org", email: "contact@example-studio.com")
+        let running = [accounts[0].id: 4, accounts[3].id: 1, accounts[4].id: 2]
+        guard confirming else { return UsageStore(sample: accounts, readings: readings, runningSessions: running) }
+        let newcomer = AccountID(account: "sample-new", organization: "sample-org", email: "contact@example-studio.com")
         let signIn = SignIn(accessToken: "sample", refreshToken: "sample", accessExpiresAt: now, expiresAt: nil, account: newcomer)
         return UsageStore(sample: accounts, readings: readings, signInStep: .confirm(signIn, replaces: false))
     }
@@ -58,13 +68,30 @@ public enum SampleUsage {
     /// Returns a sample account whose sign-in ends in this many days.
     /// @example account("dev@example.com", name: nil, endsIn: 20).title // "dev@example.com"
     private static func account(_ email: String, name: String?, endsIn days: Double) -> TrackedAccount {
-        let id = ClaudeAccountID(account: "sample-" + email, organization: "sample-org", email: email)
+        let id = AccountID(account: "sample-" + email, organization: "sample-org", email: email)
         return TrackedAccount(account: id, name: name, signInEndsAt: Date().addingTimeInterval(days * 86_400))
     }
 
     /// Returns usage with these limits, all starting again at the same date.
     /// @example usage([(.week, 15)], resetsAt: friday).room // 85
-    private static func usage(_ limits: [(AccountLimit.Kind, Double)], resetsAt: Date) -> AccountUsage {
-        AccountUsage(limits: limits.map { AccountLimit(kind: $0.0, percentUsed: $0.1, resetsAt: resetsAt) })
+    private static func usage(_ limits: [(AccountLimit.Kind, Double)], resetsAt: Date, credits: [ResetCredit]? = nil) -> AccountUsage {
+        AccountUsage(limits: limits.map { AccountLimit(kind: $0.0, percentUsed: $0.1, resetsAt: resetsAt) }, resetCredits: credits)
+    }
+
+    /// Returns the reset's panels for review: the confirmation of a Fable reset, then the notes of a spend.
+    /// @example SampleUsage.resetPanels() // the confirmation, "Utilisation du reset…", then two outcomes
+    public static func resetPanels() -> some View {
+        let fable = ResetCredit(id: "sample-fable", left: 2, clears: [.weekOnModel("Fable")], shownOn: .weekOnModel("Fable"), endsAt: Date().addingTimeInterval(115 * 86_400))
+        let week = ResetCredit(id: "sample-week", left: 1, clears: [.week, .weekOnModel("Fable")], shownOn: .week, endsAt: nil)
+        let current = AccountUsage(limits: [AccountLimit(kind: .week, percentUsed: 35, resetsAt: nil), AccountLimit(kind: .weekOnModel("Fable"), percentUsed: 4, resetsAt: nil)], resetCredits: [fable, week])
+        return VStack(alignment: .leading, spacing: 12) {
+            ResetConfirmation(usage: current, kind: .weekOnModel("Fable"), cancel: {}, confirm: {})
+            ResetConfirmation(usage: current, kind: .week, cancel: {}, confirm: {})
+            ResetOutcomeNote(outcome: nil) {}
+            ResetOutcomeNote(outcome: .spent) {}
+            ResetOutcomeNote(outcome: .nothingToReset) {}
+        }
+        .padding(14)
+        .frame(width: 330)
     }
 }

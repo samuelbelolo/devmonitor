@@ -8,9 +8,9 @@ final class ClaudeUsageReaderTests: XCTestCase {
 
     /// Returns a reader of this vault through this provider, on the test's clock.
     /// @example reader(vault, provider)
-    private func reader(_ vault: SignInVault, _ provider: FakeProvider) -> ClaudeUsageReader {
+    private func reader(_ vault: SignInVault, _ provider: FakeProvider) -> UsageReader {
         let clock = clock
-        return ClaudeUsageReader(vault: vault, transport: provider, now: { clock.now })
+        return UsageReader(vault: vault, transport: provider, now: { clock.now })
     }
 
     /// The access token a request carries.

@@ -60,13 +60,16 @@ func renderSamples(into folder: String) async -> Bool {
 Task { @MainActor in
     if arguments.first == "usage" {
         // The accounts window, from made-up accounts, for review only: `make media` does not publish it.
-        // Variants: none (the window and its menu bar item), "confirm", "agents" (the entry closed), "entry" (opened).
+        // Variants: none (the window and its menu bar item), "confirm", "agents" (the entry closed), "entry" (opened),
+        // "reset" (the confirmation of a reset and the notes of a spend).
         let path = arguments.dropFirst().first ?? "usage.png"
-        let variant = arguments.dropFirst(2).first
+        // An option such as -AppleLanguages is not a variant.
+        let variant = arguments.dropFirst(2).first.flatMap { $0.hasPrefix("-") ? nil : $0 }
         let view: AnyView = switch variant {
         case "confirm": AnyView(SampleUsage.window(confirming: true))
         case "agents": AnyView(SampleWindows.agents())
         case "entry": AnyView(SampleUsage.openEntry())
+        case "reset": AnyView(SampleUsage.resetPanels())
         default: AnyView(SampleUsage.window())
         }
         var written = await WindowImage.write(view, to: path)

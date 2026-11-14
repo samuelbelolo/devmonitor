@@ -13,4 +13,6 @@ struct ScanResult: Sendable {
     let processIdentities: Set<String>
     /// The swap in use at the time of the scan; nil when the system did not say.
     let swap: SwapUsage?
+    /// The key of the tracked account each session draws on, by session id; absent when it cannot be told.
+    var sessionAccounts: [String: String] = [:]
 }

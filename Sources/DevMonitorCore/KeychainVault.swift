@@ -12,21 +12,28 @@ public struct KeychainVault: SignInVault {
 
     /// The status `security` ends with when the item is not there.
     private static let notFound: Int32 = 44
-    private let service: String
+    private let servicePrefix: String
     private let run: Run
 
-    /// Creates a vault for this service name; `run` replaces the real `security` in the tests.
-    /// @example KeychainVault() // the sign-ins of the app, under local.devmonitor.claude
-    public init(service: String = "local.devmonitor.claude", run: Run? = nil) {
-        self.service = service
+    /// Creates a vault whose items are named after this prefix and their provider; `run` replaces the real
+    /// `security` in the tests.
+    /// @example KeychainVault() // Claude's sign-ins under local.devmonitor.claude, Codex's under local.devmonitor.codex
+    public init(servicePrefix: String = "local.devmonitor", run: Run? = nil) {
+        self.servicePrefix = servicePrefix
         self.run = run ?? { CommandRunner.result("/usr/bin/security", $0, input: $1, timeout: 10) }
+    }
+
+    /// Returns the service name of an account's item: the prefix and the account's provider.
+    /// @example service(for: "codex:abc:") // "local.devmonitor.codex"
+    private func service(for key: String) -> String {
+        "\(servicePrefix).\(AccountID.provider(ofKey: key).rawValue)"
     }
 
     /// Writes the sign-in, then reads it back: a save that does not read back the same is refused.
     /// @example try vault.save(signIn)
     public func save(_ signIn: SignIn) throws {
         let secret = try Self.encoded(signIn)
-        let line = "add-generic-password -U -s \(service) -a \(signIn.account.key) -w \(secret)\n"
+        let line = "add-generic-password -U -s \(service(for: signIn.account.key)) -a \(signIn.account.key) -w \(secret)\n"
         guard run(["-i"], line)?.status == 0, try stored(signIn.account.key) == secret else { throw SignInVaultError.notSaved }
     }
 
@@ -47,14 +54,14 @@ public struct KeychainVault: SignInVault {
     /// Deletes the item of an account.
     /// @example try vault.remove(key: id.key)
     public func remove(key: String) throws {
-        let status = run(["delete-generic-password", "-s", service, "-a", key], nil)?.status
+        let status = run(["delete-generic-password", "-s", service(for: key), "-a", key], nil)?.status
         guard status == 0 || status == Self.notFound else { throw SignInVaultError.notRemoved }
     }
 
     /// Returns the text kept for an account; nil when there is no item, throws when `security` failed or hung.
     /// @example try stored(id.key) // "eyJhY2Nlc3…"
     private func stored(_ key: String) throws -> String? {
-        guard let result = run(["find-generic-password", "-s", service, "-a", key, "-w"], nil) else { throw SignInVaultError.unreadable }
+        guard let result = run(["find-generic-password", "-s", service(for: key), "-a", key, "-w"], nil) else { throw SignInVaultError.unreadable }
         if result.status == Self.notFound { return nil }
         guard result.status == 0 else { throw SignInVaultError.unreadable }
         return result.output.trimmingCharacters(in: .whitespacesAndNewlines)

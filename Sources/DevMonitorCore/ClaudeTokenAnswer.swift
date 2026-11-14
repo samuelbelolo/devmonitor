@@ -26,9 +26,9 @@ public enum ClaudeTokenAnswer {
 
     /// Returns the account an answer names; nil when it does not name one.
     /// @example account(of: answer)?.email // "dev@example.com"
-    private static func account(of answer: Answer) -> ClaudeAccountID? {
+    private static func account(of answer: Answer) -> AccountID? {
         guard let account = answer.account?.uuid, let organization = answer.organization?.uuid else { return nil }
-        return ClaudeAccountID(account: account, organization: organization, email: answer.account?.emailAddress ?? "")
+        return AccountID(account: account, organization: organization, email: answer.account?.emailAddress ?? "")
     }
 
     /// The fields of the answer DevMonitor reads.

@@ -2,7 +2,7 @@ import AppKit
 import DevMonitorCore
 import Foundation
 
-/// The Claude accounts the accounts window follows, their last reading, and the sign-in under way.
+/// The Claude and Codex accounts the accounts window follows, their last reading, and the sign-in under way.
 ///
 /// The app's own store is the only one that touches the keychain and the network: a renewal ends the pair in use, so
 /// a second program reading the same accounts would sign the app out. The sample store, for the documentation's
@@ -24,7 +24,16 @@ public final class UsageStore: ObservableObject {
     @Published private(set) var accounts: [TrackedAccount]
     @Published private(set) var readings: [String: AccountReading]
     @Published private(set) var signInStep: SignInStep = .idle
-    private let reader: ClaudeUsageReader?
+    /// Whether the accounts are being read again because the ↻ button was pressed.
+    @Published private(set) var isRefreshing = false
+    /// How many running agent sessions draw on each account, by account key; absent when none.
+    @Published private(set) var runningSessions: [String: Int] = [:]
+    /// The accounts on which a reset is being spent.
+    @Published var spending: Set<String> = []
+    /// What the last spend on each account gave, shown until its owner dismisses it.
+    @Published var spendOutcomes: [String: ResetSpendOutcome] = [:]
+    /// Reads and spends on the accounts; nil in a sample store, which reads and spends nothing.
+    let reader: UsageReader?
     private let defaults: UserDefaults?
     private var loop: Task<Void, Never>?
     private var signInTask: Task<Void, Never>?
@@ -35,7 +44,7 @@ public final class UsageStore: ObservableObject {
         defaults = .standard
         accounts = TrackedAccount.load(from: .standard)
         readings = [:]
-        reader = ClaudeUsageReader(vault: KeychainVault(), transport: URLSessionTransport())
+        reader = UsageReader(vault: KeychainVault(), transport: URLSessionTransport())
         loop = Task { [weak self] in
             try? await Task.sleep(for: .seconds(5))
             while !Task.isCancelled {
@@ -47,12 +56,21 @@ public final class UsageStore: ObservableObject {
 
     /// Creates a store that shows these accounts and readings and never reads, signs in or saves anything.
     /// @example UsageStore(sample: accounts, readings: readings).roomCount // (withRoom: 2, total: 3)
-    init(sample accounts: [TrackedAccount], readings: [String: AccountReading], signInStep: SignInStep = .idle) {
+    init(sample accounts: [TrackedAccount], readings: [String: AccountReading], signInStep: SignInStep = .idle,
+         runningSessions: [String: Int] = [:]) {
         self.accounts = accounts
         self.readings = readings
         self.signInStep = signInStep
+        self.runningSessions = runningSessions
         reader = nil
         defaults = nil
+    }
+
+    /// Counts the running sessions on each account from the account each session draws on, by session id.
+    /// @example store.noteSessions(["4242-1": "acc:org", "4243-1": "acc:org"]); store.runningSessions // ["acc:org": 2]
+    public func noteSessions(_ sessionAccounts: [String: String]) {
+        let counts = sessionAccounts.values.reduce(into: [String: Int]()) { $0[$1, default: 0] += 1 }
+        if counts != runningSessions { runningSessions = counts }
     }
 
     /// Returns a store that follows no account and never reads anything, for a window rendered outside the app.
@@ -65,25 +83,51 @@ public final class UsageStore: ObservableObject {
     /// window offers to follow one.
     public var hasAccounts: Bool { !accounts.isEmpty }
 
-    /// Returns the name offered when a sign-in is confirmed: the one its account already has, or one guessed from its
-    /// email.
-    /// @example store.suggestedName(for: signIn) // "Miramo"
-    func suggestedName(for signIn: SignIn) -> String {
-        accounts.first { $0.id == signIn.account.key }?.name ?? TrackedAccount.suggestedName(for: signIn.account.email)
+    /// Returns the name already given to the account a sign-in reads; empty for a new account, which is then called
+    /// by its whole email until its owner names it.
+    /// @example store.currentName(for: signIn) // ""
+    func currentName(for signIn: SignIn) -> String {
+        accounts.first { $0.id == signIn.account.key }?.name ?? ""
     }
 
-    /// The accounts with the most room first; those never read last.
+    /// The accounts, Claude's then Codex's, each provider's with the most room first and those never read last.
     var sortedAccounts: [TrackedAccount] {
-        accounts.enumerated().sorted { lhs, rhs in
+        Provider.allCases.flatMap(sortedAccounts(of:))
+    }
+
+    /// Returns one provider's accounts, the most room first; those never read last.
+    /// @example store.sortedAccounts(of: .codex).count // 1
+    func sortedAccounts(of provider: Provider) -> [TrackedAccount] {
+        accounts.enumerated().filter { $0.element.account.provider == provider }.sorted { lhs, rhs in
             let left = reading(of: lhs.element).usage?.room ?? -1
             let right = reading(of: rhs.element).usage?.room ?? -1
             return left == right ? lhs.offset < rhs.offset : left > right
         }.map(\.element)
     }
 
-    /// How many accounts have room, out of how many are followed.
+    /// How many Claude accounts have room, out of how many are followed: the count of the menu bar and the window.
     var roomCount: (withRoom: Int, total: Int) {
-        RoomCount.of(accounts.map { reading(of: $0).usage })
+        RoomCount.of(accounts.filter { $0.account.provider == .claude }.map { reading(of: $0).usage })
+    }
+
+    /// Whether an account of this provider is followed.
+    /// @example store.follows(.codex) // true
+    func follows(_ provider: Provider) -> Bool {
+        accounts.contains { $0.account.provider == provider }
+    }
+
+    /// The share used of the fullest limit among the Codex accounts read; nil when none is followed or read.
+    var codexFullest: Double? {
+        accounts.filter { $0.account.provider == .codex }.compactMap { reading(of: $0).usage?.fullest?.percentUsed }.max()
+    }
+
+    /// Returns how a provider's accounts sign in.
+    /// @example UsageStore.signInMethod(for: .codex).ports // [1455, 1457]
+    static func signInMethod(for provider: Provider) -> SignInMethod {
+        switch provider {
+        case .claude: ClaudeSignInMethod()
+        case .codex: CodexSignInMethod()
+        }
     }
 
     /// Returns what is known of an account.
@@ -92,30 +136,36 @@ public final class UsageStore: ObservableObject {
         readings[account.id] ?? .empty
     }
 
-    /// Reads, when the window opens, the accounts not read for two minutes.
+    /// Reads, when the window opens, the accounts whose usage or resets were not read for two minutes; these reads ask
+    /// for the resets, which the timer's reads never do.
     /// @example store.windowOpened()
     func windowOpened() {
         Task {
-            for account in accounts where reading(of: account).isDue(at: Date()) {
-                await read(account.id)
+            let now = Date()
+            for account in accounts where reading(of: account).isDue(at: now) || reading(of: account).areCreditsDue(at: now) {
+                await read(account.id, withResets: true)
             }
         }
     }
 
-    /// Opens the authorization page and waits for the browser; the account obtained is shown for confirmation.
-    /// @example store.startSignIn()
-    func startSignIn() {
+    /// Opens the provider's authorization page and waits for the browser; the account obtained is shown for
+    /// confirmation.
+    /// @example store.startSignIn(.codex)
+    func startSignIn(_ provider: Provider) {
         guard reader != nil, signInStep != .waiting else { return }
         signInStep = .waiting
+        // The window closes when the browser comes forward; it opens again with the account to confirm.
+        weak var origin = MenuBarButton.open()
         signInTask = Task { [weak self] in
             do {
-                let signIn = try await ClaudeSignInFlow.run(open: { url in DispatchQueue.main.async { NSWorkspace.shared.open(url) } }, transport: URLSessionTransport())
+                let signIn = try await SignInFlow.run(Self.signInMethod(for: provider), open: { url in DispatchQueue.main.async { NSWorkspace.shared.open(url) } }, transport: URLSessionTransport())
                 guard !Task.isCancelled, let self else { return }
                 self.signInStep = .confirm(signIn, replaces: self.accounts.contains { $0.id == signIn.account.key })
             } catch {
                 guard !Task.isCancelled else { return }
-                self?.signInStep = .failed(UsageStrings.failure(error))
+                self?.signInStep = .failed(UsageStrings.failure(error, provider: provider))
             }
+            if let origin { MenuBarButton.reopen(origin) }
         }
     }
 
@@ -143,7 +193,7 @@ public final class UsageStore: ObservableObject {
             accounts = TrackedAccount.adding(signIn.account, name: given, signInEndsAt: signIn.expiresAt, to: accounts)
             persist()
             signInStep = .idle
-            await read(signIn.account.key)
+            await read(signIn.account.key, withResets: true)
         }
     }
 
@@ -165,6 +215,24 @@ public final class UsageStore: ObservableObject {
         Task { try? await reader.forget(account.id) }
     }
 
+    /// Reads every account now, all at once, and says so for at least half a second, so the ↻ button visibly turns.
+    /// Does nothing in a sample store.
+    /// @example store.refreshNow()
+    func refreshNow() {
+        guard reader != nil, !isRefreshing else { return }
+        isRefreshing = true
+        let keys = accounts.map(\.id)
+        Task {
+            let started = Date()
+            await withTaskGroup(of: Void.self) { group in
+                for key in keys { group.addTask { await self.read(key, withResets: true) } }
+            }
+            let shown = Date().timeIntervalSince(started)
+            if shown < 0.6 { try? await Task.sleep(for: .seconds(0.6 - shown)) }
+            isRefreshing = false
+        }
+    }
+
     /// Reads every account, one after the other, each after a random delay when `spread` is set.
     /// @example await store.readAll(spread: true)
     func readAll(spread: Bool) async {
@@ -174,11 +242,12 @@ public final class UsageStore: ObservableObject {
         }
     }
 
-    /// Reads one account and takes in the outcome; does nothing in a sample store.
-    /// @example await store.read(account.id)
-    func read(_ key: String) async {
+    /// Reads one account, and its resets when `withResets` is set, and takes in the outcome; does nothing in a sample
+    /// store.
+    /// @example await store.read(account.id, withResets: true)
+    func read(_ key: String, withResets: Bool = false) async {
         guard let reader else { return }
-        let outcome = await reader.read(key)
+        let outcome = await reader.read(key, withResets: withResets)
         guard accounts.contains(where: { $0.id == key }) else { return }
         var reading = readings[key] ?? .empty
         reading.apply(outcome, at: Date())

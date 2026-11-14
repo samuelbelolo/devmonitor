@@ -11,6 +11,8 @@ public final class MonitorStore: ObservableObject {
     /// The coding agent sessions running, and the ids of those that worked during the last scan interval.
     @Published private(set) var agentSessions: [AgentSession] = []
     @Published private(set) var workingSessions: Set<String> = []
+    /// The key of the tracked account each session draws on, by session id; absent when it cannot be told.
+    @Published private(set) var sessionAccounts: [String: String] = [:]
     /// When each process was asked to stop; 5 s later, a row whose processes are still alive offers to force them.
     @Published private(set) var stopRequests = StopRequests()
     /// The swap in use; nil until the first scan and when the system does not say.
@@ -50,6 +52,7 @@ public final class MonitorStore: ObservableObject {
         idleSeconds = sample.idleSeconds
         agentSessions = sample.agentSessions
         workingSessions = sample.workingSessions
+        sessionAccounts = sample.sessionAccounts
         swap = sample.swap
     }
 
@@ -102,6 +105,7 @@ public final class MonitorStore: ObservableObject {
         idleSeconds = result.idleSeconds
         agentSessions = result.agentSessions
         workingSessions = result.workingSessions
+        sessionAccounts = result.sessionAccounts
         swap = result.swap
         clock.update(hasWork: !workingSessions.isEmpty)
         stopRequests.prune(keeping: result.processIdentities)

@@ -11,20 +11,25 @@ public struct SignIn: Codable, Sendable, Equatable {
     /// When the sign-in itself ends: renewals do not move it, and past it only a new sign-in reads the account.
     /// Nil when the provider did not say.
     public let expiresAt: Date?
-    public let account: ClaudeAccountID
+    public let account: AccountID
+    /// When the provider asks for the access token to be renewed, ahead of its end; nil when it does not say.
+    public let renewAfter: Date?
 
-    public init(accessToken: String, refreshToken: String, accessExpiresAt: Date, expiresAt: Date?, account: ClaudeAccountID) {
+    public init(accessToken: String, refreshToken: String, accessExpiresAt: Date, expiresAt: Date?, account: AccountID, renewAfter: Date? = nil) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken
         self.accessExpiresAt = accessExpiresAt
         self.expiresAt = expiresAt
         self.account = account
+        self.renewAfter = renewAfter
     }
 
-    /// Whether the access token ends within five minutes, so it is renewed before the next read.
+    /// Whether the access token is renewed before the next read: it ends within five minutes, or the provider's
+    /// renewal date has come.
     /// @example signIn.isAccessDue(at: Date()) // false
     public func isAccessDue(at now: Date) -> Bool {
-        accessExpiresAt.timeIntervalSince(now) < Self.renewalMargin
+        if let renewAfter, renewAfter <= now { return true }
+        return accessExpiresAt.timeIntervalSince(now) < Self.renewalMargin
     }
 
     /// Whether the sign-in has reached its deadline.

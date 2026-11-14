@@ -43,8 +43,8 @@ final class AccountReadingTests: XCTestCase {
 
     func testANewSignInOfATrackedAccountReplacesItAndKeepsItsName() {
         let first = TrackedAccount(account: UsageFakes.account, name: "Perso", signInEndsAt: start)
-        let other = ClaudeAccountID(account: "a", organization: "o", email: "other@example.com")
-        let renewedEmail = ClaudeAccountID(account: UsageFakes.account.account, organization: UsageFakes.account.organization, email: "new@example.com")
+        let other = AccountID(account: "a", organization: "o", email: "other@example.com")
+        let renewedEmail = AccountID(account: UsageFakes.account.account, organization: UsageFakes.account.organization, email: "new@example.com")
         let later = start.addingTimeInterval(86_400)
         let list = TrackedAccount.adding(renewedEmail, signInEndsAt: later, to: [first, TrackedAccount(account: other, name: nil, signInEndsAt: nil)])
         XCTAssertEqual(list.map(\.account.email), ["new@example.com", "other@example.com"])
@@ -52,15 +52,6 @@ final class AccountReadingTests: XCTestCase {
         XCTAssertEqual(list[0].signInEndsAt, later)
         let added = TrackedAccount.adding(other, signInEndsAt: nil, to: [first])
         XCTAssertEqual(added.map(\.id), [first.id, other.key])
-    }
-
-    func testTheNameOfferedIsTheOrganisationsDomainOrThePersonOnAMailProvider() {
-        XCTAssertEqual(TrackedAccount.suggestedName(for: "contact@miramo.fr"), "Miramo")
-        XCTAssertEqual(TrackedAccount.suggestedName(for: "sam@client-a.com"), "Client A")
-        XCTAssertEqual(TrackedAccount.suggestedName(for: "dev@team.example.co.uk"), "Example")
-        XCTAssertEqual(TrackedAccount.suggestedName(for: "samuel.belolo@gmail.com"), "Samuel Belolo")
-        XCTAssertEqual(TrackedAccount.suggestedName(for: "jo_doe+claude@icloud.com"), "Jo Doe")
-        XCTAssertEqual(TrackedAccount.suggestedName(for: "not an email"), "")
     }
 
     func testANameGivenAtSignInIsKeptAndNoNameKeepsTheOneAlreadyGiven() {

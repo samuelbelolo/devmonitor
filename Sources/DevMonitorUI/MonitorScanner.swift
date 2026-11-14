@@ -7,6 +7,7 @@ actor MonitorScanner {
     private var tracker = IdleTracker()
     private var workTracker = WorkTracker()
     private var cacheClearedAt = Date()
+    private let accounts = SessionAccountReader()
     /// Seconds a resolved directory is trusted before it is looked up again.
     private static let cacheLifetime: TimeInterval = 300
 
@@ -28,6 +29,17 @@ actor MonitorScanner {
         return ScanResult(
             groups: scan.groups, idleSeconds: idleSeconds, agentSessions: scan.agentSessions,
             workingSessions: workTracker.record(scan.agentSessions, at: now), processIdentities: scan.processIdentities,
-            swap: SwapUsage.read())
+            swap: SwapUsage.read(), sessionAccounts: accounts(of: scan.agentSessions))
+    }
+
+    /// Returns the key of the tracked account each session draws on, by session id.
+    /// @example accounts(of: sessions) // ["4242-1700000000": "1111…:6666…"]
+    private func accounts(of sessions: [AgentSession]) -> [String: String] {
+        var found: [String: String] = [:]
+        for session in sessions {
+            let environment = ProcessEnvironment.values(SessionAccountReader.variables, of: session.process.pid)
+            found[session.id] = accounts.accountKey(agent: session.agent, environment: environment)
+        }
+        return found
     }
 }

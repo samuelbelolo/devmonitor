@@ -38,7 +38,7 @@ final class ClaudeSignInFlowTests: XCTestCase {
     func testASignInComesBackFromTheBrowserAndIsExchangedWithTheVerifier() async throws {
         let seen = SeenPage()
         let provider = FakeProvider(signIn: [.answer(200, UsageFakes.tokenAnswer(access: "a1", refresh: "r1"))])
-        let signIn = try await ClaudeSignInFlow.run(open: browser(seen: seen), transport: provider, now: { UsageFakes.start }, timeout: 10)
+        let signIn = try await SignInFlow.run(ClaudeSignInMethod(), open: browser(seen: seen), transport: provider, now: { UsageFakes.start }, timeout: 10)
         XCTAssertEqual(signIn.accessToken, "a1")
         XCTAssertEqual(signIn.account.email, "dev@example.com")
         let exchanges = await provider.sent("signIn")
@@ -53,7 +53,7 @@ final class ClaudeSignInFlowTests: XCTestCase {
     func testACodeCarryingItsStateAfterAHashIsSplit() async throws {
         let seen = SeenPage()
         let provider = FakeProvider(signIn: [.answer(200, UsageFakes.tokenAnswer(access: "a1", refresh: "r1"))])
-        _ = try await ClaudeSignInFlow.run(open: browser(code: "the-code#the-state", seen: seen), transport: provider, now: { UsageFakes.start }, timeout: 10)
+        _ = try await SignInFlow.run(ClaudeSignInMethod(), open: browser(code: "the-code#the-state", seen: seen), transport: provider, now: { UsageFakes.start }, timeout: 10)
         let exchanges = await provider.sent("signIn")
         let exchange = try XCTUnwrap(exchanges.first)
         let body = try XCTUnwrap(JSONSerialization.jsonObject(with: exchange.httpBody ?? Data()) as? [String: String])
@@ -64,10 +64,10 @@ final class ClaudeSignInFlowTests: XCTestCase {
     func testABrowserComingBackWithAnotherStateIsRefusedWithoutAnyExchange() async {
         let provider = FakeProvider(signIn: [.answer(200, UsageFakes.tokenAnswer(access: "a1", refresh: "r1"))])
         do {
-            _ = try await ClaudeSignInFlow.run(open: browser(state: "forged", seen: SeenPage()), transport: provider, now: { UsageFakes.start }, timeout: 10)
+            _ = try await SignInFlow.run(ClaudeSignInMethod(), open: browser(state: "forged", seen: SeenPage()), transport: provider, now: { UsageFakes.start }, timeout: 10)
             XCTFail("accepted a forged state")
         } catch {
-            XCTAssertEqual(error as? ClaudeSignInFlow.Failure, .stateMismatch)
+            XCTAssertEqual(error as? SignInFlow.Failure, .stateMismatch)
         }
         let sent = await provider.sent
         XCTAssertTrue(sent.isEmpty)
@@ -75,20 +75,20 @@ final class ClaudeSignInFlowTests: XCTestCase {
 
     func testABrowserThatNeverComesBackEndsTheWait() async {
         do {
-            _ = try await ClaudeSignInFlow.run(open: { _ in }, transport: FakeProvider(), now: { UsageFakes.start }, timeout: 0.5)
+            _ = try await SignInFlow.run(ClaudeSignInMethod(), open: { _ in }, transport: FakeProvider(), now: { UsageFakes.start }, timeout: 0.5)
             XCTFail("waited for ever")
         } catch {
-            XCTAssertEqual(error as? ClaudeSignInFlow.Failure, .noAnswer)
+            XCTAssertEqual(error as? SignInFlow.Failure, .noAnswer)
         }
     }
 
     func testARefusedExchangeIsReported() async {
         let provider = FakeProvider(signIn: [.answer(400, Data(#"{"error": "invalid_grant"}"#.utf8))])
         do {
-            _ = try await ClaudeSignInFlow.run(open: browser(seen: SeenPage()), transport: provider, now: { UsageFakes.start }, timeout: 10)
+            _ = try await SignInFlow.run(ClaudeSignInMethod(), open: browser(seen: SeenPage()), transport: provider, now: { UsageFakes.start }, timeout: 10)
             XCTFail("accepted a refused exchange")
         } catch {
-            XCTAssertEqual(error as? ClaudeSignInFlow.Failure, .refused(400))
+            XCTAssertEqual(error as? SignInFlow.Failure, .refused(400))
         }
     }
 }
