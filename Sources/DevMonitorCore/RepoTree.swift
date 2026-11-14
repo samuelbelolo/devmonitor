@@ -7,11 +7,21 @@ public struct RepoTree: Sendable, Equatable {
     public let folders: [String: String]
     /// Whether GitHub cut the list short: a folder missing from it may still exist.
     public let isTruncated: Bool
+    /// When GitHub last said this is the tree of the ref, by giving it or by naming the same commit again; nil when
+    /// nobody recorded it.
+    public let checkedAt: Date?
 
-    public init(rootSHA: String, folders: [String: String], isTruncated: Bool) {
+    public init(rootSHA: String, folders: [String: String], isTruncated: Bool, checkedAt: Date? = nil) {
         self.rootSHA = rootSHA
         self.folders = folders
         self.isTruncated = isTruncated
+        self.checkedAt = checkedAt
+    }
+
+    /// Returns the same tree, known to be the tree of the ref at `date`.
+    /// @example tree.checked(at: Date()).checkedAt // now
+    public func checked(at date: Date) -> RepoTree {
+        RepoTree(rootSHA: rootSHA, folders: folders, isTruncated: isTruncated, checkedAt: date)
     }
 
     /// Reads the answer of `GET /repos/<owner>/<repo>/git/trees/<ref>?recursive=1`; nil when it is anything else.

@@ -13,7 +13,8 @@ public enum SkillLock {
             guard let entry = value as? [String: Any] else { return nil }
             return InstalledSkill(
                 name: name, source: text(entry["source"]), sourceType: text(entry["sourceType"]), ref: text(entry["ref"]),
-                skillPath: text(entry["skillPath"]), folderHash: text(entry["skillFolderHash"]))
+                skillPath: text(entry["skillPath"]), folderHash: text(entry["skillFolderHash"]),
+                updatedAt: (text(entry["updatedAt"]) ?? text(entry["installedAt"])).flatMap(Timestamp.date))
         }
         .sorted { $0.name < $1.name }
     }

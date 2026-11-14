@@ -34,6 +34,30 @@ final class SkillCheckTests: XCTestCase {
         XCTAssertEqual(SkillCheck.state(of: skill("skills/audit/SKILL.md", "a1"), in: nil), .unknown(.noAnswer))
     }
 
+    func testASkillUpdatedAfterTheTreeWasCheckedIsUpToDateUntilANewerTree() {
+        let checked = Date(timeIntervalSince1970: 1_000)
+        let old = tree.checked(at: checked)
+        let after = InstalledSkill(
+            name: "audit", source: "acme/kit", sourceType: "github", ref: nil, skillPath: "skills/audit/SKILL.md", folderHash: "a2",
+            updatedAt: checked.addingTimeInterval(60))
+        XCTAssertEqual(SkillCheck.state(of: after, in: old), .upToDate)
+        // The tool may also have followed the skill to a folder the older tree does not hold.
+        let followed = InstalledSkill(
+            name: "audit", source: "acme/kit", sourceType: "github", ref: nil, skillPath: "plugins/audit/SKILL.md", folderHash: "a2",
+            updatedAt: checked.addingTimeInterval(60))
+        XCTAssertEqual(SkillCheck.state(of: followed, in: old), .upToDate)
+        // Once GitHub vouches for a tree after the update, the hashes are compared again.
+        XCTAssertEqual(SkillCheck.state(of: after, in: tree.checked(at: checked.addingTimeInterval(120))), .updateAvailable)
+    }
+
+    func testASkillUpdatedBeforeTheTreeWasCheckedIsCompared() {
+        let checked = Date(timeIntervalSince1970: 1_000)
+        let before = InstalledSkill(
+            name: "audit", source: "acme/kit", sourceType: "github", ref: nil, skillPath: "skills/audit/SKILL.md", folderHash: "old",
+            updatedAt: checked.addingTimeInterval(-60))
+        XCTAssertEqual(SkillCheck.state(of: before, in: tree.checked(at: checked)), .updateAvailable)
+    }
+
     func testATruncatedTreeIsOnlyInDoubtForTheFoldersItDoesNotShow() {
         let truncated = RepoTree(rootSHA: "r", folders: ["skills/audit": "a2"], isTruncated: true)
         XCTAssertEqual(SkillCheck.state(of: skill("skills/audit/SKILL.md", "a1"), in: truncated), .updateAvailable)
