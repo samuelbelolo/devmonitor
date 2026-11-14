@@ -104,7 +104,8 @@ DevMonitor reads your own processes' command lines to name them, on your Mac onl
 shows the value of an option, a `KEY=value` argument, a URL or a token. Nothing is stored.
 
 The only network requests are the version checks. Every 6 hours, the app asks the npm registry
-(and PyPI for Aider) for the latest version of each installed agent. Every 15 minutes, when the
+(PyPI for Aider, and Anthropic's download server for a Claude Code set up by its own installer,
+which is where `claude update` looks) for the latest version of each installed agent. Every 15 minutes, when the
 agents window opens after 5 minutes without a check, and when you press ↻, it asks GitHub's git
 server which commit each repository your skills come from is at, then GitHub's API for the file
 tree of the repositories whose commit moved. Only the package or repository name is sent, with
@@ -124,7 +125,8 @@ Plugins are compared with the marketplaces already on your Mac, with no request.
   `npx skills update`, and an unchanged answer counts too. DevMonitor asks it only when a
   repository's commit moved, once per repository at launch, and at most every 6 hours for a
   repository the git server gives no commit for. When it refuses, the last answer
-  is kept; private repositories always read as unknown.
+  is kept, and a skill updated since that answer reads as up to date until GitHub answers again;
+  private repositories always read as unknown.
 - A plugin's state is as fresh as its marketplace on your Mac: DevMonitor never refreshes one.
   Past seven days it shows the command that does, `claude plugin marketplace update`.
 - A plugin pinned to a commit of another repository shows an update as soon as its marketplace
