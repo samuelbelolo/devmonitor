@@ -1,0 +1,174 @@
+import AppKit
+import DevMonitorCore
+import Foundation
+
+/// The Claude accounts the accounts window follows, their last reading, and the sign-in under way.
+///
+/// The app's own store is the only one that touches the keychain and the network: a renewal ends the pair in use, so
+/// a second program reading the same accounts would sign the app out. The sample store, for the documentation's
+/// images and the tests, never reads anything.
+@MainActor
+public final class UsageStore: ObservableObject {
+    /// Where the sign-in started from the window stands.
+    enum SignInStep: Equatable {
+        case idle
+        case waiting
+        case confirm(SignIn, replaces: Bool)
+        case failed(String)
+    }
+
+    /// Every account is read every ten minutes, each after a random delay of up to half a minute.
+    private static let period: TimeInterval = 600
+    private static let spread: ClosedRange<Double> = 0...30
+
+    @Published private(set) var accounts: [TrackedAccount]
+    @Published private(set) var readings: [String: AccountReading]
+    @Published private(set) var signInStep: SignInStep = .idle
+    private let reader: ClaudeUsageReader?
+    private let defaults: UserDefaults?
+    private var loop: Task<Void, Never>?
+    private var signInTask: Task<Void, Never>?
+
+    /// Creates the app's store: reads the followed accounts now, then every ten minutes.
+    /// @example UsageStore() // reading the accounts kept in the keychain
+    public init() {
+        defaults = .standard
+        accounts = TrackedAccount.load(from: .standard)
+        readings = [:]
+        reader = ClaudeUsageReader(vault: KeychainVault(), transport: URLSessionTransport())
+        loop = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            while !Task.isCancelled {
+                await self?.readAll(spread: true)
+                try? await Task.sleep(for: .seconds(Self.period))
+            }
+        }
+    }
+
+    /// Creates a store that shows these accounts and readings and never reads, signs in or saves anything.
+    /// @example UsageStore(sample: accounts, readings: readings).roomCount // (withRoom: 2, total: 3)
+    init(sample accounts: [TrackedAccount], readings: [String: AccountReading], signInStep: SignInStep = .idle) {
+        self.accounts = accounts
+        self.readings = readings
+        self.signInStep = signInStep
+        reader = nil
+        defaults = nil
+    }
+
+    /// The accounts with the most room first; those never read last.
+    var sortedAccounts: [TrackedAccount] {
+        accounts.enumerated().sorted { lhs, rhs in
+            let left = reading(of: lhs.element).usage?.room ?? -1
+            let right = reading(of: rhs.element).usage?.room ?? -1
+            return left == right ? lhs.offset < rhs.offset : left > right
+        }.map(\.element)
+    }
+
+    /// How many accounts have room, out of how many are followed.
+    var roomCount: (withRoom: Int, total: Int) {
+        RoomCount.of(accounts.map { reading(of: $0).usage })
+    }
+
+    /// Returns what is known of an account.
+    /// @example store.reading(of: account).usage?.room // 83
+    func reading(of account: TrackedAccount) -> AccountReading {
+        readings[account.id] ?? .empty
+    }
+
+    /// Reads, when the window opens, the accounts not read for two minutes.
+    /// @example store.windowOpened()
+    func windowOpened() {
+        Task {
+            for account in accounts where reading(of: account).isDue(at: Date()) {
+                await read(account.id)
+            }
+        }
+    }
+
+    /// Opens the authorization page and waits for the browser; the account obtained is shown for confirmation.
+    /// @example store.startSignIn()
+    func startSignIn() {
+        guard reader != nil, signInStep != .waiting else { return }
+        signInStep = .waiting
+        signInTask = Task { [weak self] in
+            do {
+                let signIn = try await ClaudeSignInFlow.run(open: { url in DispatchQueue.main.async { NSWorkspace.shared.open(url) } }, transport: URLSessionTransport())
+                guard !Task.isCancelled, let self else { return }
+                self.signInStep = .confirm(signIn, replaces: self.accounts.contains { $0.id == signIn.account.key })
+            } catch {
+                guard !Task.isCancelled else { return }
+                self?.signInStep = .failed(UsageStrings.failure(error))
+            }
+        }
+    }
+
+    /// Drops the sign-in under way, or the message of the last one.
+    /// @example store.cancelSignIn()
+    func cancelSignIn() {
+        signInTask?.cancel()
+        signInTask = nil
+        signInStep = .idle
+    }
+
+    /// Keeps the sign-in shown for confirmation, follows its account, and reads it.
+    /// @example store.confirmSignIn()
+    func confirmSignIn() {
+        guard case .confirm(let signIn, _) = signInStep, let reader else { return }
+        Task {
+            do {
+                try await reader.keep(signIn)
+            } catch {
+                signInStep = .failed(UsageStrings.notKept)
+                return
+            }
+            accounts = TrackedAccount.adding(signIn.account, signInEndsAt: signIn.expiresAt, to: accounts)
+            persist()
+            signInStep = .idle
+            await read(signIn.account.key)
+        }
+    }
+
+    /// Gives an account a name of its own; an empty name brings back its email.
+    /// @example store.rename(account, to: "Perso")
+    func rename(_ account: TrackedAccount, to name: String) {
+        guard let index = accounts.firstIndex(where: { $0.id == account.id }) else { return }
+        accounts[index].name = name.trimmingCharacters(in: .whitespaces)
+        persist()
+    }
+
+    /// Stops following an account and forgets its sign-in.
+    /// @example store.remove(account)
+    func remove(_ account: TrackedAccount) {
+        accounts.removeAll { $0.id == account.id }
+        readings[account.id] = nil
+        persist()
+        guard let reader else { return }
+        Task { try? await reader.forget(account.id) }
+    }
+
+    /// Reads every account, one after the other, each after a random delay when `spread` is set.
+    /// @example await store.readAll(spread: true)
+    func readAll(spread: Bool) async {
+        for account in accounts {
+            if spread { try? await Task.sleep(for: .seconds(Double.random(in: Self.spread))) }
+            await read(account.id)
+        }
+    }
+
+    /// Reads one account and takes in the outcome; does nothing in a sample store.
+    /// @example await store.read(account.id)
+    func read(_ key: String) async {
+        guard let reader else { return }
+        let outcome = await reader.read(key)
+        guard accounts.contains(where: { $0.id == key }) else { return }
+        var reading = readings[key] ?? .empty
+        reading.apply(outcome, at: Date())
+        readings[key] = reading
+    }
+
+    /// Keeps the followed accounts for the next launch.
+    /// @example persist()
+    private func persist() {
+        if let defaults { TrackedAccount.save(accounts, to: defaults) }
+    }
+}

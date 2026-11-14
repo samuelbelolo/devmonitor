@@ -57,6 +57,10 @@ func renderSamples(into folder: String) async -> Bool {
 }
 
 Task { @MainActor in
+    if arguments.first == "usage" {
+        // The accounts window, from made-up accounts, for review only: `make media` does not publish it.
+        exit(await WindowImage.write(SampleUsage.window(), to: arguments.dropFirst().first ?? "usage.png") ? 0 : 1)
+    }
     if arguments.first == "sample" {
         // The images are published in English, whatever the language of the Mac that renders them.
         guard AppLanguage.current == .english else {
