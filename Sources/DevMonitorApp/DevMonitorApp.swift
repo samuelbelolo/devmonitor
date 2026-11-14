@@ -25,8 +25,7 @@ struct DevMonitorApp: App {
         MenuBarExtra {
             MenuContentView().environmentObject(store)
         } label: {
-            Image(systemName: "memorychip")
-            Text(DisplayFormat.memory(store.totalBytes))
+            MemoryMenuBarLabel().environmentObject(store)
         }
         .menuBarExtraStyle(.window)
         MenuBarExtra {

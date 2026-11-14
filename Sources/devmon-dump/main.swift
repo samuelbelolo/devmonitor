@@ -27,4 +27,7 @@ for source in extensions.skills {
 for source in extensions.plugins {
     print("plugins  \(source.name)  \(source.items.count) installed  \(source.updates) to update  \(source.unknown) unknown")
 }
+if let swap = SwapUsage.read() {
+    print("swap  \(DisplayFormat.memory(swap.usedBytes))  \(swap.state)")
+}
 print(String(format: "scan: %d process, %.0f ms", scan.processIdentities.count, Date().timeIntervalSince(started) * 1000))

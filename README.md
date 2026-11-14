@@ -72,6 +72,10 @@ died) and `idle` (no CPU for 10 minutes). MCP servers have their own collapsed g
 - **Stop N idle**, then **Confirm**: stops the idle services counted at the first click.
 - A process still running 5 seconds later gets a **Force quit** button.
 
+Under the total, a **Swap** line is always shown: grey up to a quarter of the Mac's memory,
+orange above it, red above half. The menu bar item takes the same colour, and a red line says
+how long the Mac has been up and that only a restart gives this memory back.
+
 **The agents item** (`✳ ֍ 12`) shows the logo of each agent with a session side by side, then
 their total number of sessions. A Codex that another agent started (Claude running `codex exec`
 for a review) counts as a session too, "launched by Claude". Each logo turns while its agent

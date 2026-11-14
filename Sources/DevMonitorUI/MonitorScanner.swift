@@ -27,6 +27,7 @@ actor MonitorScanner {
         tracker.prune(keeping: Set(services.map(\.id)))
         return ScanResult(
             groups: scan.groups, idleSeconds: idleSeconds, agentSessions: scan.agentSessions,
-            workingSessions: workTracker.record(scan.agentSessions, at: now), processIdentities: scan.processIdentities)
+            workingSessions: workTracker.record(scan.agentSessions, at: now), processIdentities: scan.processIdentities,
+            swap: SwapUsage.read())
     }
 }

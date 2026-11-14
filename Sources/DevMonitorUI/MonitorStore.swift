@@ -13,6 +13,10 @@ public final class MonitorStore: ObservableObject {
     @Published private(set) var workingSessions: Set<String> = []
     /// When each process was asked to stop; 5 s later, a row whose processes are still alive offers to force them.
     @Published private(set) var stopRequests = StopRequests()
+    /// The swap in use; nil until the first scan and when the system does not say.
+    @Published private(set) var swap: SwapUsage?
+    /// When the Mac last started: a restart is the only thing that gives swap back.
+    let startedAt = BootTime.read()
     /// The windows open right now; while one is, the refresh loops run at their faster pace.
     private var openWindows: Set<AppWindow> = [] { didSet { if openWindows.isEmpty != oldValue.isEmpty { startLoops() } } }
     private var isWindowVisible: Bool { !openWindows.isEmpty }
@@ -81,6 +85,7 @@ public final class MonitorStore: ObservableObject {
         idleSeconds = result.idleSeconds
         agentSessions = result.agentSessions
         workingSessions = result.workingSessions
+        swap = result.swap
         clock.update(hasWork: !workingSessions.isEmpty)
         stopRequests.prune(keeping: result.processIdentities)
     }

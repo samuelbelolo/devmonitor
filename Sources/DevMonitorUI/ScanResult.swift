@@ -11,4 +11,6 @@ struct ScanResult: Sendable {
     let workingSessions: Set<String>
     /// The identity of every process seen during the scan.
     let processIdentities: Set<String>
+    /// The swap in use at the time of the scan; nil when the system did not say.
+    let swap: SwapUsage?
 }
