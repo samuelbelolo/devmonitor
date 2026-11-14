@@ -54,6 +54,9 @@ func renderSamples(into folder: String) async -> Bool {
     for (state, name) in [(SwapState.fine, "menu-bar"), (.high, "menu-bar-swap-high"), (.critical, "menu-bar-swap-critical")] {
         written = await WindowImage.write(SampleWindows.menuBar(swap: state), to: "\(folder)/\(name).png", cornerRadius: 8, margin: 14) && written
     }
+    written = await WindowImage.write(SampleUsage.window(), to: "\(folder)/accounts-window.png") && written
+    written = await WindowImage.write(SampleUsage.menuBar(), to: "\(folder)/menu-bar-accounts.png", cornerRadius: 8, margin: 14) && written
+    written = await WindowImage.write(SampleUsage.resetConfirmation(), to: "\(folder)/accounts-reset.png") && written
     return written
 }
 

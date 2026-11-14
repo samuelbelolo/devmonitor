@@ -32,6 +32,10 @@ enum WindowImage {
         // Lets the views appear and the lists measure themselves.
         try? await Task.sleep(for: .milliseconds(800))
         host.layoutSubtreeIfNeeded()
+        // The window keeps the size of the first layout; once the views have settled, it takes the size they need,
+        // so the bottom margin is not cut when a row grew meanwhile.
+        window.setContentSize(host.fittingSize)
+        host.layoutSubtreeIfNeeded()
         let size = host.bounds.size
         guard size.width > 0, size.height > 0, let picture = bitmap(of: size) else { return false }
         host.cacheDisplay(in: host.bounds, to: picture)

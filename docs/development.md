@@ -83,11 +83,16 @@ It writes these files to `docs/media/`, in English and in dark mode, whatever th
 | `swap-line-states.png` | The Swap line in its three states |
 | `agents-window.png` | The agents window |
 | `menu-bar.png`, `menu-bar-swap-high.png`, `menu-bar-swap-critical.png` | The two menu bar items, by state of the swap |
+| `accounts-window.png` | The accounts window |
+| `menu-bar-accounts.png` | The accounts menu bar item |
+| `accounts-reset.png` | The confirmation of a free reset |
 
 The projects, sessions and extensions in them are made up: they come from
-`Sources/DevMonitorUI/SampleData.swift`. The stores behind these views never scan the Mac, ask
-the network or stop anything, and `SampleStoresTests` fails if one does. Nothing of the Mac that
-renders the images ends up in them.
+`Sources/DevMonitorUI/SampleData.swift`, and the accounts from `SampleUsage.swift`, whose dates
+are relative to the time of the render so the images stay the same from one day to the next.
+The stores behind these views never scan the Mac, ask the network, read the keychain, spend a
+reset or stop anything, and `SampleStoresTests` and `UsageStoreTests` fail if one does. Nothing
+of the Mac that renders the images ends up in them.
 
 **Run `make media` whenever a change alters what a window or a menu bar item looks like, and
 commit the images with the change.** When the change adds something the sample Mac does not

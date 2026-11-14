@@ -22,7 +22,7 @@ final class UsageStoreTests: XCTestCase {
 
     func testClaudesAccountsComeFirstEachProvidersWithTheMostRoomFirst() {
         let store = SampleUsage.store()
-        XCTAssertEqual(store.sortedAccounts(of: .claude).map(\.title), ["clients@example.com", "Perso", "Team", "labs@example.com", "work@example.com"])
+        XCTAssertEqual(store.sortedAccounts(of: .claude).map(\.title), ["clients@example.com", "Personal", "Team", "labs@example.com", "work@example.com"])
         XCTAssertEqual(store.sortedAccounts.map(\.account.provider), [.claude, .claude, .claude, .claude, .claude, .codex])
         XCTAssertEqual(store.codexFullest, 55)
         XCTAssertTrue(store.follows(.codex))
@@ -68,7 +68,7 @@ final class UsageStoreTests: XCTestCase {
         store.rename(store.accounts[1], to: " ")
         XCTAssertEqual(store.accounts[1].title, "work@example.com")
         store.remove(store.accounts[1])
-        XCTAssertEqual(store.accounts.map(\.title), ["Perso", "Team", "Perso", "clients@example.com", "labs@example.com"])
+        XCTAssertEqual(store.accounts.map(\.title), ["Personal", "Team", "Personal", "clients@example.com", "labs@example.com"])
         XCTAssertNil(store.readings[work.id])
     }
 

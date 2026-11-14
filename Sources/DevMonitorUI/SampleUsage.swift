@@ -41,10 +41,10 @@ public enum SampleUsage {
         let friday = now.addingTimeInterval(5 * 86_400)
         let codex = AccountID(provider: .codex, account: "sample-codex", organization: "", email: "dev@example.com")
         let accounts = [
-            account("personal@example.com", name: "Perso", endsIn: 20),
-            account("work@example.com", name: nil, endsIn: 2),
+            account("personal@example.com", name: "Personal", endsIn: 20),
+            account("work@example.com", name: nil, endsIn: 25),
             account("team@example.com", name: "Team", endsIn: 9),
-            TrackedAccount(account: codex, name: "Perso", signInEndsAt: nil),
+            TrackedAccount(account: codex, name: "Personal", signInEndsAt: nil),
             account("clients@example.com", name: nil, endsIn: 25),
             account("labs@example.com", name: nil, endsIn: 25),
         ]
@@ -76,6 +76,17 @@ public enum SampleUsage {
     /// @example usage([(.week, 15)], resetsAt: friday).room // 85
     private static func usage(_ limits: [(AccountLimit.Kind, Double)], resetsAt: Date, credits: [ResetCredit]? = nil) -> AccountUsage {
         AccountUsage(limits: limits.map { AccountLimit(kind: $0.0, percentUsed: $0.1, resetsAt: resetsAt) }, resetCredits: credits)
+    }
+
+    /// Returns the confirmation of a Fable reset, for the documentation: no calendar date in it, so the image is the
+    /// same whatever day it is rendered.
+    /// @example SampleUsage.resetConfirmation() // "Use a reset? Fable (64 %) starts again at once. …"
+    public static func resetConfirmation() -> some View {
+        let fable = ResetCredit(id: "sample-fable", left: 2, clears: [.weekOnModel("Fable")], shownOn: .weekOnModel("Fable"), endsAt: nil)
+        let current = AccountUsage(limits: [AccountLimit(kind: .week, percentUsed: 58, resetsAt: nil), AccountLimit(kind: .weekOnModel("Fable"), percentUsed: 64, resetsAt: nil)], resetCredits: [fable])
+        return ResetConfirmation(usage: current, kind: .weekOnModel("Fable"), cancel: {}, confirm: {})
+            .padding(14)
+            .frame(width: 360)
     }
 
     /// Returns the reset's panels for review: the confirmation of a Fable reset, then the notes of a spend.

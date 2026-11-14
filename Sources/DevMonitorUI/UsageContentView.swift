@@ -22,6 +22,8 @@ public struct UsageContentView: View {
                 AccountGrid(accounts: usage.sortedAccounts, columns: columns)
             }
         }
+        // Laid out at the height it asks the window for, so the margin under the last row is the same as the others.
+        .fixedSize(horizontal: false, vertical: true)
         .font(.system(size: 12.5))
         .padding(14)
         .frame(width: columns == 2 ? 710 : 360)
