@@ -13,8 +13,10 @@ struct AccountUsageBlock: View {
 
     var body: some View {
         let reading = usage.reading(of: account)
+        let sharedReset = Self.sharedReset(of: reading.usage?.limits ?? [])
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
+                AgentLogoView(agent: .claude, size: 13)
                 if isRenaming {
                     TextField(account.account.email, text: $draft).textFieldStyle(.roundedBorder)
                         .onSubmit { finishRenaming() }
@@ -23,11 +25,12 @@ struct AccountUsageBlock: View {
                     Text(account.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1).truncationMode(.middle)
                 }
                 Spacer(minLength: 6)
+                if let sharedReset { ResetCountdown(date: sharedReset).opacity(reading.problem == nil ? 1 : 0.45) }
                 menu
             }
             if let limits = reading.usage?.limits, !limits.isEmpty {
                 ForEach(Array(limits.enumerated()), id: \.offset) { _, limit in
-                    LimitGaugeRow(limit: limit, isStale: reading.problem != nil)
+                    LimitGaugeRow(limit: limit, isStale: reading.problem != nil, showsReset: sharedReset == nil)
                 }
             } else if reading.problem == nil {
                 Text(UsageStrings.notReadYet).font(.system(size: 11)).foregroundStyle(.secondary)
@@ -84,6 +87,16 @@ struct AccountUsageBlock: View {
         return [age, problem].compactMap { $0 }.joined(separator: " · ")
     }
 
+    /// Returns the moment every limit starts again, when they all start again within the same minute; nil when they
+    /// do not, or when one does not say. The block then says it once, instead of on each gauge.
+    /// @example sharedReset(of: [week, fable]) // the coming Friday at 05:00
+    static func sharedReset(of limits: [AccountLimit]) -> Date? {
+        let dates = limits.map(\.resetsAt)
+        guard !dates.isEmpty, !dates.contains(nil), let first = dates.compactMap({ $0 }).min(), let last = dates.compactMap({ $0 }).max(),
+              last.timeIntervalSince(first) <= 60 else { return nil }
+        return first
+    }
+
     /// Keeps the name typed and leaves the field.
     /// @example finishRenaming()
     private func finishRenaming() {
@@ -97,6 +110,8 @@ struct LimitGaugeRow: View {
     let limit: AccountLimit
     /// Draws the limit pale, for a reading the last read could not renew.
     let isStale: Bool
+    /// Says when this limit starts again; off when the block says it once for all its limits.
+    var showsReset = true
 
     private var tint: Color {
         if limit.percentUsed >= RoomCount.fullAt { return Palette.orphan }
@@ -108,7 +123,7 @@ struct LimitGaugeRow: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(UsageStrings.name(of: limit.kind)).fontWeight(.medium)
                 Spacer(minLength: 6)
-                if let resetsAt = limit.resetsAt { Text(UsageStrings.resets(resetsAt)).font(.system(size: 11)).foregroundStyle(.secondary) }
+                if showsReset, let resetsAt = limit.resetsAt { ResetCountdown(date: resetsAt) }
                 Text("\(Int(limit.percentUsed.rounded())) %").monospacedDigit().fontWeight(.semibold).frame(minWidth: 40, alignment: .trailing)
             }
             GeometryReader { geometry in
@@ -120,5 +135,16 @@ struct LimitGaugeRow: View {
             .frame(height: 6)
         }
         .opacity(isStale ? 0.45 : 1)
+    }
+}
+
+/// How long until a limit starts again, counted down while the window is open.
+struct ResetCountdown: View {
+    let date: Date
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { context in
+            Text(UsageStrings.resetsIn(Int(date.timeIntervalSince(context.date)))).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1)
+        }
     }
 }

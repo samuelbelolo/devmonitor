@@ -25,7 +25,8 @@ func render(to path: String) async {
     // The store asked GitHub when it was created, during the wait above: this only reads the files again.
     await extensions.refresh(fetchingUpstream: false)
     let content: AnyView = showsAgents
-        ? AnyView(AgentsContentView().agentEnvironment(store: store, versions: versions, extensions: extensions))
+        // The accounts are never read here: a second program renewing their sign-ins would end the app's.
+        ? AnyView(AgentsContentView().agentEnvironment(store: store, versions: versions, extensions: extensions).environmentObject(UsageStore.placeholder()))
         : AnyView(MenuContentView().environmentObject(store))
     // Sized the way MenuBarExtra sizes its window: from the content's preferred size, not its fitting size.
     let controller = NSHostingController(rootView: content.background(Color(nsColor: .windowBackgroundColor)))
@@ -59,7 +60,20 @@ func renderSamples(into folder: String) async -> Bool {
 Task { @MainActor in
     if arguments.first == "usage" {
         // The accounts window, from made-up accounts, for review only: `make media` does not publish it.
-        exit(await WindowImage.write(SampleUsage.window(), to: arguments.dropFirst().first ?? "usage.png") ? 0 : 1)
+        // Variants: none (the window and its menu bar item), "confirm", "agents" (the entry closed), "entry" (opened).
+        let path = arguments.dropFirst().first ?? "usage.png"
+        let variant = arguments.dropFirst(2).first
+        let view: AnyView = switch variant {
+        case "confirm": AnyView(SampleUsage.window(confirming: true))
+        case "agents": AnyView(SampleWindows.agents())
+        case "entry": AnyView(SampleUsage.openEntry())
+        default: AnyView(SampleUsage.window())
+        }
+        var written = await WindowImage.write(view, to: path)
+        if variant == nil {
+            written = await WindowImage.write(SampleUsage.menuBar(), to: path.replacingOccurrences(of: ".png", with: "-menu-bar.png"), cornerRadius: 8, margin: 14) && written
+        }
+        exit(written ? 0 : 1)
     }
     if arguments.first == "sample" {
         // The images are published in English, whatever the language of the Mac that renders them.

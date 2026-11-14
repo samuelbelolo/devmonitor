@@ -54,6 +54,22 @@ final class AccountReadingTests: XCTestCase {
         XCTAssertEqual(added.map(\.id), [first.id, other.key])
     }
 
+    func testTheNameOfferedIsTheOrganisationsDomainOrThePersonOnAMailProvider() {
+        XCTAssertEqual(TrackedAccount.suggestedName(for: "contact@miramo.fr"), "Miramo")
+        XCTAssertEqual(TrackedAccount.suggestedName(for: "sam@client-a.com"), "Client A")
+        XCTAssertEqual(TrackedAccount.suggestedName(for: "dev@team.example.co.uk"), "Example")
+        XCTAssertEqual(TrackedAccount.suggestedName(for: "samuel.belolo@gmail.com"), "Samuel Belolo")
+        XCTAssertEqual(TrackedAccount.suggestedName(for: "jo_doe+claude@icloud.com"), "Jo Doe")
+        XCTAssertEqual(TrackedAccount.suggestedName(for: "not an email"), "")
+    }
+
+    func testANameGivenAtSignInIsKeptAndNoNameKeepsTheOneAlreadyGiven() {
+        let first = TrackedAccount(account: UsageFakes.account, name: "Perso", signInEndsAt: nil)
+        XCTAssertEqual(TrackedAccount.adding(UsageFakes.account, name: "Boulot", signInEndsAt: nil, to: [first])[0].name, "Boulot")
+        XCTAssertEqual(TrackedAccount.adding(UsageFakes.account, name: nil, signInEndsAt: nil, to: [first])[0].name, "Perso")
+        XCTAssertEqual(TrackedAccount.adding(UsageFakes.account, name: "New", signInEndsAt: nil, to: [])[0].name, "New")
+    }
+
     func testAnAccountIsCalledByItsNameOrElseItsEmail() {
         XCTAssertEqual(TrackedAccount(account: UsageFakes.account, name: "Perso", signInEndsAt: nil).title, "Perso")
         XCTAssertEqual(TrackedAccount(account: UsageFakes.account, name: "  ", signInEndsAt: nil).title, "dev@example.com")

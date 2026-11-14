@@ -16,7 +16,7 @@ _Avoid_: Connection, login, session
 
 **Limit**:
 A cap the provider puts on an account over a period, such as Claude's week or its week on one model; it has a share already used and a time it starts again.
-_Avoid_: Quota, window, bucket
+_Avoid_: Window, bucket. The interface says "quotas", the word its user reads.
 
 **Room**:
 What is left of an account's fullest limit: an account has only as much room as its tightest limit leaves.

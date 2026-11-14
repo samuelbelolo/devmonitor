@@ -58,6 +58,6 @@ public enum SampleWindows {
     private static func withAgentStores(_ view: some View, swap: SwapState) -> some View {
         let versions = VersionStore(sample: SampleData.versions)
         let extensions = ExtensionStore(sample: SampleData.extensions, checkedAt: Date().addingTimeInterval(-180), versions: versions)
-        return view.agentEnvironment(store: store(swap: swap), versions: versions, extensions: extensions)
+        return view.agentEnvironment(store: store(swap: swap), versions: versions, extensions: extensions).environmentObject(UsageStore.placeholder())
     }
 }

@@ -55,6 +55,23 @@ public final class UsageStore: ObservableObject {
         defaults = nil
     }
 
+    /// Returns a store that follows no account and never reads anything, for a window rendered outside the app.
+    /// @example UsageStore.placeholder().hasAccounts // false
+    public static func placeholder() -> UsageStore {
+        UsageStore(sample: [], readings: [:])
+    }
+
+    /// Whether an account is followed: until one is, the accounts item stays out of the menu bar and the agents
+    /// window offers to follow one.
+    public var hasAccounts: Bool { !accounts.isEmpty }
+
+    /// Returns the name offered when a sign-in is confirmed: the one its account already has, or one guessed from its
+    /// email.
+    /// @example store.suggestedName(for: signIn) // "Miramo"
+    func suggestedName(for signIn: SignIn) -> String {
+        accounts.first { $0.id == signIn.account.key }?.name ?? TrackedAccount.suggestedName(for: signIn.account.email)
+    }
+
     /// The accounts with the most room first; those never read last.
     var sortedAccounts: [TrackedAccount] {
         accounts.enumerated().sorted { lhs, rhs in
@@ -110,9 +127,10 @@ public final class UsageStore: ObservableObject {
         signInStep = .idle
     }
 
-    /// Keeps the sign-in shown for confirmation, follows its account, and reads it.
-    /// @example store.confirmSignIn()
-    func confirmSignIn() {
+    /// Keeps the sign-in shown for confirmation, follows its account under the name given, and reads it. An empty
+    /// name calls the account by its email.
+    /// @example store.confirmSignIn(name: "Miramo")
+    func confirmSignIn(name: String) {
         guard case .confirm(let signIn, _) = signInStep, let reader else { return }
         Task {
             do {
@@ -121,7 +139,8 @@ public final class UsageStore: ObservableObject {
                 signInStep = .failed(UsageStrings.notKept)
                 return
             }
-            accounts = TrackedAccount.adding(signIn.account, signInEndsAt: signIn.expiresAt, to: accounts)
+            let given = name.trimmingCharacters(in: .whitespaces)
+            accounts = TrackedAccount.adding(signIn.account, name: given, signInEndsAt: signIn.expiresAt, to: accounts)
             persist()
             signInStep = .idle
             await read(signIn.account.key)

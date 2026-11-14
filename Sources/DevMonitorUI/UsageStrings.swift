@@ -7,8 +7,17 @@ enum UsageStrings {
     private static let locale = Locale(identifier: french ? "fr_FR" : "en_US")
 
     static let withRoom = french ? "comptes Claude avec de la marge" : "Claude accounts with room"
+    static let trackQuotas = french ? "Suivre tes quotas Claude" : "Track your Claude quotas"
+    static let title = "Claude"
+    static let emptyPitch = french
+        ? "Vois d'un coup d'œil où en sont les quotas de chacun de tes comptes : la semaine, Fable, et quand ils repartent."
+        : "See at a glance where the quotas of each of your accounts stand: the week, Fable, and when they start again."
+    static let signInFirst = french ? "Connecter un compte" : "Sign in to an account"
+    static let name = french ? "Nom" : "Name"
+    static let emptyFinePrint = french
+        ? "Tu l'autorises dans ton navigateur. DevMonitor peut seulement lire l'usage du compte, et garde cet accès dans ton Trousseau."
+        : "You allow it in your browser. DevMonitor can only read the account's usage, and keeps that access in your keychain."
     static let signInToAnAccount = french ? "Connecter un compte" : "Sign in to an account"
-    static let noAccount = french ? "Aucun compte suivi. Clique sur + pour en connecter un." : "No account followed yet. Click + to sign in to one."
     static let waitingForBrowser = french ? "Autorise DevMonitor dans ton navigateur…" : "Allow DevMonitor in your browser…"
     static let add = french ? "Ajouter" : "Add"
     static let cancel = french ? "Annuler" : "Cancel"
@@ -54,11 +63,20 @@ enum UsageStrings {
         }
     }
 
-    /// Returns when a limit starts again: its weekday and time.
-    /// @example UsageStrings.resets(friday) // "resets Fri 5:00 AM"
-    static func resets(_ date: Date) -> String {
-        let when = date.formatted(.dateTime.weekday(.abbreviated).hour().minute().locale(locale))
-        return french ? "repart \(when)" : "resets \(when)"
+    /// Returns how long until a limit starts again.
+    /// @example UsageStrings.resetsIn(394_380) // "resets in 4 d 13 h"
+    static func resetsIn(_ seconds: Int) -> String {
+        french ? "repart dans \(countdown(seconds))" : "resets in \(countdown(seconds))"
+    }
+
+    /// Returns a wait in its two largest units: days and hours, hours and minutes, or minutes.
+    /// @example UsageStrings.countdown(7_800) // "2 h 10 min"
+    static func countdown(_ seconds: Int) -> String {
+        let left = max(seconds, 0)
+        let days = left / 86_400, hours = left % 86_400 / 3600, minutes = left % 3600 / 60
+        if days > 0 { return hours > 0 ? "\(days) \(french ? "j" : "d") \(hours) h" : "\(days) \(french ? "j" : "d")" }
+        if hours > 0 { return minutes > 0 ? (french ? "\(hours) h \(minutes)" : "\(hours) h \(minutes) min") : "\(hours) h" }
+        return "\(max(minutes, 1)) min"
     }
 
     /// Returns how long ago the account was read.

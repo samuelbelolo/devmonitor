@@ -3,7 +3,7 @@ import DevMonitorCore
 import SwiftUI
 
 /// The menu bar label of the accounts item: Claude's logo, then how many accounts have room out of how many are
-/// followed. The count turns orange when one account has room left, red when none has.
+/// followed, or a "+" while none is. The count turns orange when one account has room left, red when none has.
 public struct UsageMenuBarLabel: View {
     @EnvironmentObject private var usage: UsageStore
 
@@ -11,13 +11,19 @@ public struct UsageMenuBarLabel: View {
 
     public var body: some View {
         let count = usage.roomCount
-        let text = count.total == 0 ? "–" : "\(count.withRoom)/\(count.total)"
+        let text = Self.text(withRoom: count.withRoom, total: count.total)
         Image(nsImage: AgentGlyph.image(for: [AgentGlyph.Logo(agent: .claude, frame: 0, badge: false)]))
         if let tint = Self.tint(withRoom: count.withRoom, total: count.total) {
             Image(nsImage: Self.coloredText(text, NSColor(tint)))
         } else {
             Text(text)
         }
+    }
+
+    /// Returns the count shown in the menu bar: "+" while no account is followed, so the item says what it is for.
+    /// @example UsageMenuBarLabel.text(withRoom: 2, total: 3) // "2/3"
+    static func text(withRoom: Int, total: Int) -> String {
+        total == 0 ? "+" : "\(withRoom)/\(total)"
     }
 
     /// Returns the color of the count: red when no followed account has room, orange when one has; nil otherwise.

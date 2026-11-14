@@ -6,15 +6,37 @@ import SwiftUI
 /// Nothing here is read from the Mac that renders it.
 @MainActor
 public enum SampleUsage {
-    /// Returns the accounts window filled with the sample accounts.
+    /// Returns the accounts window filled with the sample accounts, with a sign-in to confirm when `confirming` is set.
     /// @example SampleUsage.window() // "2/3 Claude accounts with room"
-    public static func window() -> some View {
-        UsageContentView().environmentObject(store())
+    public static func window(confirming: Bool = false) -> some View {
+        UsageContentView().environmentObject(store(confirming: confirming))
     }
 
-    /// Returns a store that shows the sample accounts and never reads anything.
-    /// @example SampleUsage.store().roomCount // (withRoom: 1, total: 3)
-    static func store() -> UsageStore {
+    /// Returns the menu bar item of the accounts, with the sample accounts.
+    /// @example SampleUsage.menuBar() // Claude's logo, then "2/3"
+    public static func menuBar() -> some View {
+        HStack(spacing: 5) { UsageMenuBarLabel() }
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 5)
+            .environmentObject(store())
+    }
+
+    /// Returns the end of the agents window while no account is followed, its entry opened.
+    /// @example SampleUsage.openEntry() // "Claude", what following an account does, the button
+    public static func openEntry() -> some View {
+        VStack(alignment: .leading, spacing: 10) { UsageEntry(isOpen: true) }
+            .font(.system(size: 12.5))
+            .padding(14)
+            .frame(width: 360)
+            .environmentObject(UsageStore.placeholder())
+    }
+
+    /// Returns a store that shows the sample accounts and never reads anything; with `confirming`, a new account waits
+    /// for confirmation.
+    /// @example SampleUsage.store().roomCount // (withRoom: 2, total: 3)
+    static func store(confirming: Bool = false) -> UsageStore {
         let now = Date()
         let friday = now.addingTimeInterval(5 * 86_400)
         let accounts = [
@@ -27,7 +49,10 @@ public enum SampleUsage {
             accounts[1].id: AccountReading(usage: usage([(.week, 82), (.weekOnModel("Fable"), 96)], resetsAt: friday), readAt: now.addingTimeInterval(-240), problem: nil),
             accounts[2].id: AccountReading(usage: usage([(.week, 40), (.weekOnModel("Fable"), 30)], resetsAt: friday), readAt: now.addingTimeInterval(-6 * 3600), problem: .needsSignIn),
         ]
-        return UsageStore(sample: accounts, readings: readings)
+        guard confirming else { return UsageStore(sample: accounts, readings: readings) }
+        let newcomer = ClaudeAccountID(account: "sample-new", organization: "sample-org", email: "contact@example-studio.com")
+        let signIn = SignIn(accessToken: "sample", refreshToken: "sample", accessExpiresAt: now, expiresAt: nil, account: newcomer)
+        return UsageStore(sample: accounts, readings: readings, signInStep: .confirm(signIn, replaces: false))
     }
 
     /// Returns a sample account whose sign-in ends in this many days.

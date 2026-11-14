@@ -30,12 +30,13 @@ struct DevMonitorApp: App {
         }
         .menuBarExtraStyle(.window)
         MenuBarExtra {
-            AgentsContentView().agentEnvironment(store: store, versions: versions, extensions: extensions)
+            AgentsContentView().agentEnvironment(store: store, versions: versions, extensions: extensions).environmentObject(usage)
         } label: {
             AgentMenuBarLabel().agentEnvironment(store: store, versions: versions, extensions: extensions)
         }
         .menuBarExtraStyle(.window)
-        MenuBarExtra {
+        // Only once an account is followed: until then, the agents window offers to follow one.
+        MenuBarExtra(isInserted: Binding(get: { usage.hasAccounts }, set: { _ in })) {
             UsageContentView().environmentObject(usage)
         } label: {
             UsageMenuBarLabel().environmentObject(usage)

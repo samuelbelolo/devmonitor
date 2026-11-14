@@ -30,6 +30,8 @@ final class UsageStoreTests: XCTestCase {
         XCTAssertEqual(UsageMenuBarLabel.tint(withRoom: 1, total: 3), Palette.idle)
         XCTAssertEqual(UsageMenuBarLabel.tint(withRoom: 0, total: 3), Palette.orphan)
         XCTAssertNil(UsageMenuBarLabel.tint(withRoom: 0, total: 0))
+        XCTAssertEqual(UsageMenuBarLabel.text(withRoom: 2, total: 3), "2/3")
+        XCTAssertEqual(UsageMenuBarLabel.text(withRoom: 0, total: 0), "+")
     }
 
     func testRenamingAndRemovingChangeOnlyTheSampleStore() {
