@@ -9,9 +9,8 @@ struct ExtensionKindView: View {
     var warning: (text: String, command: String)?
 
     @State private var isExpanded = false
-    /// The natural height of the source list; a ScrollView has none, so the window would collapse it to zero.
-    @State private var listHeight: CGFloat = 0
-    private static let maximumListHeight: CGFloat = 300
+    /// The one source whose line is expanded: expanding another folds it, so the list stays short enough for the screen.
+    @State private var expandedSource: String?
 
     private var attention: [ExtensionSource] { sources.filter(\.needsAttention) }
     private var quiet: [ExtensionSource] { sources.filter { !$0.needsAttention } }
@@ -31,19 +30,19 @@ struct ExtensionKindView: View {
             .padding(.vertical, 3)
             .contentShape(Rectangle())
             .onTapGesture { isExpanded.toggle() }
-            if isExpanded {
-                ScrollView {
-                    list.background(GeometryReader { Color.clear.preference(key: ListHeightKey.self, value: $0.size.height) })
-                }
-                .frame(height: min(max(listHeight, 20), Self.maximumListHeight))
-                .onPreferenceChange(ListHeightKey.self) { listHeight = $0 }
-            }
+            // As tall as its lines, so the window grows with it. A scroll area of its own cut the last line and, with
+            // a mouse connected, gave 17 points of every line to a scroll bar.
+            if isExpanded { list }
         }
     }
 
     private var list: some View {
         VStack(alignment: .leading, spacing: 5) {
-            ForEach(attention) { ExtensionSourceRow(source: $0) }
+            ForEach(attention) { source in
+                ExtensionSourceRow(source: source, isExpanded: expandedSource == source.id) {
+                    expandedSource = expandedSource == source.id ? nil : source.id
+                }
+            }
             if !quiet.isEmpty {
                 Text(Strings.quietSources(quiet.count, items: ExtensionReport.count(in: quiet), kind: kind, others: !attention.isEmpty, checked: quiet.contains(where: \.isChecked)))
                     .font(.system(size: 11)).foregroundStyle(.tertiary).padding(.horizontal, 6)

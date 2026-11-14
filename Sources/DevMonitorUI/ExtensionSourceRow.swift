@@ -1,10 +1,13 @@
 import DevMonitorCore
 import SwiftUI
 
-/// One repository of skills or marketplace of plugins: its counts, then what to do about it when expanded.
+/// One repository of skills or marketplace of plugins: its counts, then what to do about it when expanded. Its
+/// list decides which line is expanded, so that one is at a time.
 struct ExtensionSourceRow: View {
     let source: ExtensionSource
-    @State private var isExpanded = false
+    let isExpanded: Bool
+    /// Expands the line, or folds it when it is expanded.
+    let toggle: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -18,7 +21,7 @@ struct ExtensionSourceRow: View {
             }
             .padding(.vertical, 2)
             .contentShape(Rectangle())
-            .onTapGesture { isExpanded.toggle() }
+            .onTapGesture(perform: toggle)
             if isExpanded { details.padding(.leading, 15) }
         }
         .padding(.horizontal, 6)
