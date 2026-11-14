@@ -21,6 +21,10 @@ public final class VersionStore: ObservableObject {
     private var latest: [Agent: VersionNumber] = [:]
     /// Counts the refreshes started: when several overlap, only the latest one publishes.
     private var refreshes = 0
+    /// Tells when an update replaces an agent's command, so its version is read then and not only when a window opens.
+    private var watcher: FileWatcher?
+    /// The commands the watcher follows.
+    private var watched: [String] = []
 
     /// Creates the store and starts checking: now, then every six hours.
     /// @example VersionStore() // reading the installed versions
@@ -58,9 +62,22 @@ public final class VersionStore: ObservableObject {
         let refresh = refreshes
         let checks = checksLatest
         let installed = await BlockingWork.run { InstalledAgents.versions() }
-        let found = checks && fetchingLatest ? await LatestVersions.fetch(installed.map(\.agent)) : latest
+        let commands = await BlockingWork.run { InstalledAgents.executables() }
+        watch(commands.map(\.path))
+        let found = checks && fetchingLatest ? await LatestVersions.fetch(commands) : latest
         guard refresh == refreshes else { return }
         latest = checks ? found : [:]
         reports = installed.map { AgentVersionReport(agent: $0.agent, installed: $0.version, latest: latest[$0.agent]) }
+    }
+
+    /// Follows the agents' commands: when an update replaces one, the installed versions are read again, so the
+    /// menu bar and the window are right before anyone opens them. Does nothing while the commands are the same.
+    /// @example watch(["/Users/me/.local/bin/claude"])
+    private func watch(_ commands: [String]) {
+        guard commands != watched else { return }
+        watched = commands
+        watcher = FileWatcher(files: commands) { [weak self] in
+            Task { @MainActor in await self?.refreshInstalled() }
+        }
     }
 }

@@ -8,8 +8,11 @@ struct CopyCommandView: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            // A long command is cut after a few lines; the button still copies all of it.
-            Text(command).font(.system(size: 11.5, design: .monospaced)).lineLimit(4).truncationMode(.middle).textSelection(.enabled)
+            // A long command wraps on up to three lines, then is cut in the middle; the button still copies all of
+            // it. It keeps the lines it needs: left to the window, a text gives its lines up one by one as soon as
+            // room is short, so the command shrank to one line each time a list was expanded under it.
+            Text(command).font(.system(size: 11.5, design: .monospaced)).lineLimit(3).truncationMode(.middle)
+                .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
             Spacer(minLength: 6)
             Button(action: copy) { Text(isCopied ? Strings.copied : Strings.copy).font(.system(size: 11, weight: .semibold)) }
                 .buttonStyle(.plain)

@@ -11,7 +11,7 @@ public enum Marketplaces {
             guard let record = value as? [String: Any], let location = record["installLocation"] as? String else { continue }
             let catalog = contents(location + "/.claude-plugin/marketplace.json")
             marketplaces[name] = Marketplace(
-                name: name, location: location, lastUpdated: (record["lastUpdated"] as? String).flatMap(date),
+                name: name, location: location, lastUpdated: (record["lastUpdated"] as? String).flatMap(Timestamp.date),
                 entries: catalog.map(entries) ?? [:])
         }
         return marketplaces
@@ -40,15 +40,5 @@ public enum Marketplaces {
         }
         if let object = value as? [String: Any], let sha = object["sha"] as? String, !sha.isEmpty { return .pinned(sha: sha) }
         return .other
-    }
-
-    /// Reads a timestamp such as `2026-10-05T15:32:58.748Z`, with or without fractions of a second.
-    /// @example date("2026-10-05T15:32:58.748Z") // 2026-10-05 15:32:58 +0000
-    private static func date(_ text: String) -> Date? {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: text) { return date }
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: text)
     }
 }

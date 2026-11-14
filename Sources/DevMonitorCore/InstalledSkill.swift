@@ -1,3 +1,5 @@
+import Foundation
+
 /// One skill recorded in the lock file of the `skills` tool.
 public struct InstalledSkill: Sendable, Equatable {
     public let name: String
@@ -8,14 +10,17 @@ public struct InstalledSkill: Sendable, Equatable {
     public let skillPath: String?
     /// The git tree hash of the skill's folder when it was installed or last updated.
     public let folderHash: String?
+    /// When the `skills` tool last installed or updated the skill; nil when the lock file does not say.
+    public let updatedAt: Date?
 
-    public init(name: String, source: String?, sourceType: String?, ref: String?, skillPath: String?, folderHash: String?) {
+    public init(name: String, source: String?, sourceType: String?, ref: String?, skillPath: String?, folderHash: String?, updatedAt: Date? = nil) {
         self.name = name
         self.source = source
         self.sourceType = sourceType
         self.ref = ref
         self.skillPath = skillPath
         self.folderHash = folderHash
+        self.updatedAt = updatedAt
     }
 
     /// The GitHub repository to compare the skill with; nil when it comes from somewhere else.

@@ -16,6 +16,30 @@ final class HostedView {
         settle()
     }
 
+    /// Shows the view in a borderless window as tall as the view asks, the way a menu bar window follows its content.
+    /// @example HostedView(sizedByContent: Text("hi"), width: 200)
+    init<Content: View>(sizedByContent view: Content, width: CGFloat) {
+        _ = NSApplication.shared
+        window = NSWindow(contentRect: NSRect(x: 200, y: 200, width: width, height: 10), styleMask: [.borderless], backing: .buffered, defer: false)
+        let host = NSHostingView(rootView: view.frame(width: width))
+        host.sizingOptions = [.minSize]
+        window.contentView = host
+        window.orderFrontRegardless()
+        settle()
+    }
+
+    /// The height of the window.
+    var height: CGFloat { window.frame.height }
+
+    /// Every scroll area the view holds.
+    var scrollViews: [NSScrollView] { window.contentView.map(Self.scrollViews) ?? [] }
+
+    /// Returns every scroll area under a view, itself included.
+    /// @example scrollViews(in: host).count // 0
+    private static func scrollViews(in view: NSView) -> [NSScrollView] {
+        ((view as? NSScrollView).map { [$0] } ?? []) + view.subviews.flatMap(scrollViews)
+    }
+
     /// Presses and releases the mouse at a point given from the top-left corner of the view, then lets the view react.
     /// @example hosted.click(x: 191, y: 15)
     func click(x: CGFloat, y: CGFloat) {

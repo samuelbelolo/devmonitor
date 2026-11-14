@@ -4,7 +4,8 @@ import Foundation
 /// address, shared with the `skills` tool, and an unchanged answer counts like any other. So the git server is
 /// asked first which commit the ref points to, outside that limit, and the API only when that commit is not the one
 /// of the tree already known. A source the git server gives no commit for is asked by its ref, at most every six
-/// hours. Answers are remembered for as long as the app runs; a refused or failed request leaves the last tree.
+/// hours. Answers are remembered for as long as the app runs; a refused or failed request leaves the last tree, which
+/// keeps the date GitHub last vouched for it, so a reader can tell what was installed since.
 public actor RepoTrees {
     /// Sends a request and returns the body and the status of the answer; nil when nothing came back.
     public typealias Load = @Sendable (URLRequest) async -> (data: Data, status: Int)?
@@ -13,11 +14,14 @@ public actor RepoTrees {
         let tree: RepoTree
         /// The commit the tree was read at; nil when it was asked by its ref.
         let commit: String?
+        /// When GitHub last gave this tree, or named its commit again.
+        var checkedAt: Date
     }
 
     /// What GitHub said about one source this time.
     private enum Reply: Sendable {
-        case changed(Answer)
+        /// A tree, and the commit it was read at; nil when it was asked by its ref.
+        case changed(tree: RepoTree, commit: String?)
         /// The commit is the one of the tree already known.
         case unchanged
         case none
@@ -59,16 +63,17 @@ public actor RepoTrees {
         for (source, reply, byRef) in replies {
             if byRef { askedByRef[source] = date }
             switch reply {
-            case .changed(let answer):
-                self.known[source] = answer
+            case .changed(let tree, let commit):
+                self.known[source] = Answer(tree: tree, commit: commit, checkedAt: now())
                 lastAnswered = now()
             case .unchanged:
+                self.known[source]?.checkedAt = now()
                 lastAnswered = now()
             case .none:
                 break
             }
         }
-        return self.known.filter { wanted.contains($0.key) }.mapValues(\.tree)
+        return self.known.filter { wanted.contains($0.key) }.mapValues { $0.tree.checked(at: $0.checkedAt) }
     }
 
     /// Asks about one source: "unchanged" when its commit is the known one, else the API for the tree at that commit,
@@ -83,7 +88,7 @@ public actor RepoTrees {
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         let response = await load(request)
         guard let response, response.status == 200, let tree = RepoTree(parsing: response.data) else { return (.none, commit == nil) }
-        return (.changed(Answer(tree: tree, commit: commit)), commit == nil)
+        return (.changed(tree: tree, commit: commit), commit == nil)
     }
 
     /// Returns the commit a source's ref points to: the ref itself when it is a commit hash, else what the git

@@ -95,6 +95,44 @@ final class RepoTreesTests: XCTestCase {
         XCTAssertEqual(offline[source]?.rootSHA, "root1")
     }
 
+    func testATreeKeepsTheDateGitHubLastVouchedForIt() async {
+        let refusal = Data(#"{"message":"API rate limit exceeded"}"#.utf8)
+        let clock = Clock()
+        let github = ScriptedGitHub(commits: [c1, c1, c2], answers: [(body, 200), (refusal, 403)])
+        let fetcher = trees(github, clock: clock)
+        let first = await fetcher.fetch([source])
+        XCTAssertEqual(first[source]?.checkedAt, Date(timeIntervalSince1970: 0))
+        clock.advance(by: 900)
+        let sameCommit = await fetcher.fetch([source])
+        XCTAssertEqual(sameCommit[source]?.checkedAt, Date(timeIntervalSince1970: 900))
+        clock.advance(by: 900)
+        let refused = await fetcher.fetch([source])
+        XCTAssertEqual(refused[source]?.checkedAt, Date(timeIntervalSince1970: 900))
+    }
+
+    func testASkillUpdatedBehindARefusedCheckIsNotCalledOutdated() async {
+        // The report: the tool had just updated a skill, and the window still offered the update.
+        let atC1 = Data(#"{"sha":"root1","tree":[{"path":"skills/audit","type":"tree","sha":"a1"}]}"#.utf8)
+        let refusal = Data(#"{"message":"API rate limit exceeded"}"#.utf8)
+        let clock = Clock()
+        let github = ScriptedGitHub(commits: [c1, c2], answers: [(atC1, 200), (refusal, 403)])
+        let fetcher = trees(github, clock: clock)
+        let installedBefore = InstalledSkill(
+            name: "audit", source: "acme/kit", sourceType: "github", ref: nil, skillPath: "skills/audit/SKILL.md", folderHash: "a0",
+            updatedAt: Date(timeIntervalSince1970: -86_400))
+        let first = await fetcher.fetch([source])
+        XCTAssertEqual(SkillCheck.state(of: installedBefore, in: first[source]), .updateAvailable)
+        // The repository moves to c2, the tool installs the skill as it is there, then GitHub refuses the app the new tree.
+        clock.advance(by: 600)
+        let updated = InstalledSkill(
+            name: "audit", source: "acme/kit", sourceType: "github", ref: nil, skillPath: "skills/audit/SKILL.md", folderHash: "a2",
+            updatedAt: clock.now())
+        clock.advance(by: 300)
+        let refused = await fetcher.fetch([source])
+        XCTAssertEqual(refused[source]?.folderSHA("skills/audit"), "a1")
+        XCTAssertEqual(SkillCheck.state(of: updated, in: refused[source]), .upToDate)
+    }
+
     func testOnlyAnAnswerCountsAsACheck() async throws {
         let refusal = Data(#"{"message":"API rate limit exceeded"}"#.utf8)
         let clock = Clock()

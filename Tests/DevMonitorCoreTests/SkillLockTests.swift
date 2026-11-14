@@ -30,6 +30,21 @@ final class SkillLockTests: XCTestCase {
         XCTAssertNil(skills[3].gitHubSource)
     }
 
+    func testTheLastUpdateIsReadAndFallsBackOnTheInstall() {
+        let dated = Data(#"""
+        {"skills":{
+          "updated":{"source":"acme/kit","sourceType":"github","installedAt":"2026-10-01T08:00:00.000Z","updatedAt":"2026-11-10T10:07:24.408Z"},
+          "installed":{"source":"acme/kit","sourceType":"github","installedAt":"2026-10-01T08:00:00.000Z"},
+          "undated":{"source":"acme/kit","sourceType":"github"}
+        }}
+        """#.utf8)
+        let skills = SkillLock.skills(from: dated) ?? []
+        XCTAssertEqual(skills.map(\.name), ["installed", "undated", "updated"])
+        XCTAssertEqual(skills[0].updatedAt, Timestamp.date("2026-10-01T08:00:00.000Z"))
+        XCTAssertNil(skills[1].updatedAt)
+        XCTAssertEqual(skills[2].updatedAt?.timeIntervalSince1970 ?? 0, 1_794_305_244.408, accuracy: 0.001)
+    }
+
     func testGarbageIsNotALockFile() {
         XCTAssertNil(SkillLock.skills(from: Data("not json".utf8)))
         XCTAssertNil(SkillLock.skills(from: Data(#"{"skills":[1,2]}"#.utf8)))

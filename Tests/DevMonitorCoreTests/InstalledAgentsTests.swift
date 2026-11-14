@@ -13,6 +13,13 @@ final class InstalledAgentsTests: XCTestCase {
         XCTAssertEqual(folders.filter { $0 == "/opt/homebrew/bin" }.count, 1)
     }
 
+    func testTheFirstCommandAlongTheFoldersIsTheOneFound() {
+        let present: Set<String> = ["/b/claude", "/a/codex", "/b/codex"]
+        let found = InstalledAgents.executables(in: ["/a", "/b"], isExecutable: present.contains)
+        XCTAssertEqual(found.map(\.agent), [.claude, .codex])
+        XCTAssertEqual(found.map(\.path), ["/b/claude", "/a/codex"])
+    }
+
     func testProbeFindsTheInterpreterInstalledBesideTheCommand() {
         let environment = InstalledAgents.probeEnvironment(for: "/Users/me/.n/bin/codex", folders: ["/Users/me/.local/bin"], base: ["PATH": "/usr/bin:/bin", "HOME": "/Users/me"])
         XCTAssertEqual(environment["PATH"], "/Users/me/.n/bin:/Users/me/.local/bin:/usr/bin:/bin")
