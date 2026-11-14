@@ -5,13 +5,9 @@ public enum InstalledAgents {
     /// Returns the installed version of every agent found, in the order of `Agent.allCases`. The probes run side by side.
     /// @example InstalledAgents.versions().map(\.agent) // [.claude, .codex, .cursorAgent]
     public static func versions() -> [(agent: Agent, version: VersionNumber?)] {
-        let home = NSHomeDirectory()
         let base = ProcessInfo.processInfo.environment
-        let nvmVersions = (try? FileManager.default.contentsOfDirectory(atPath: home + "/.nvm/versions/node")) ?? []
-        let folders = searchFolders(home: home, inheritedPath: base["PATH"], nvmVersions: nvmVersions)
-        let found = Agent.allCases.compactMap { agent in
-            folders.map { $0 + "/" + agent.command }.first(where: FileManager.default.isExecutableFile).map { (agent, $0) }
-        }
+        let folders = searchFolders()
+        let found = executables(in: folders).map { ($0.agent, $0.path) }
         var versions = [VersionNumber?](repeating: nil, count: found.count)
         let lock = NSLock()
         DispatchQueue.concurrentPerform(iterations: found.count) { index in
@@ -23,6 +19,26 @@ public enum InstalledAgents {
             lock.unlock()
         }
         return found.indices.map { (found[$0].0, versions[$0]) }
+    }
+
+    /// Returns the command of every agent found in the folders, in the order of `Agent.allCases`: the first one
+    /// along the folders, as a shell would pick it. It is the file an update replaces, so its change tells that the
+    /// installed version did.
+    /// @example InstalledAgents.executables(in: ["/Users/me/.local/bin"]).map(\.path) // ["/Users/me/.local/bin/claude"]
+    public static func executables(
+        in folders: [String] = searchFolders(), isExecutable: (String) -> Bool = FileManager.default.isExecutableFile
+    ) -> [(agent: Agent, path: String)] {
+        Agent.allCases.compactMap { agent in
+            folders.map { $0 + "/" + agent.command }.first(where: isExecutable).map { (agent, $0) }
+        }
+    }
+
+    /// Returns the folders searched on this Mac, from its home folder, its node versions and the app's own PATH.
+    /// @example InstalledAgents.searchFolders().first // "/Users/me/.local/bin"
+    public static func searchFolders() -> [String] {
+        let home = NSHomeDirectory()
+        let nvmVersions = (try? FileManager.default.contentsOfDirectory(atPath: home + "/.nvm/versions/node")) ?? []
+        return searchFolders(home: home, inheritedPath: ProcessInfo.processInfo.environment["PATH"], nvmVersions: nvmVersions)
     }
 
     /// Returns the folders searched for agent commands, without repeats: the usual install folders, the version

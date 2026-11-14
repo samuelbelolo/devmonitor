@@ -17,6 +17,23 @@ final class AgentReleaseTests: XCTestCase {
         XCTAssertEqual(AgentRelease.latestURL(for: .claude)?.absoluteString, "https://registry.npmjs.org/@anthropic-ai/claude-code/latest")
     }
 
+    func testAClaudeInstalledByItsInstallerIsComparedWithTheInstallersChannel() {
+        // `claude update` reads this channel, which got 2.1.325 half an hour after npm did: asked npm, the app
+        // announced a version the command could not install yet.
+        let installer = "/Users/me/.local/share/claude/versions/2.1.323"
+        XCTAssertEqual(AgentRelease.latestURL(for: .claude, executable: installer)?.absoluteString, "https://downloads.claude.ai/claude-code-releases/latest")
+        XCTAssertEqual(AgentRelease.latest(from: Data("2.1.325\n".utf8), for: .claude, executable: installer)?.text, "2.1.325")
+        XCTAssertNil(AgentRelease.latest(from: Data("<html>503 Service Unavailable</html>".utf8), for: .claude, executable: installer))
+    }
+
+    func testAClaudeInstalledFromNpmIsComparedWithNpm() {
+        let npm = "/Users/me/.n/lib/node_modules/@anthropic-ai/claude-code/cli.js"
+        XCTAssertEqual(AgentRelease.latestURL(for: .claude, executable: npm)?.absoluteString, "https://registry.npmjs.org/@anthropic-ai/claude-code/latest")
+        XCTAssertEqual(AgentRelease.latest(from: Data(#"{"version":"2.1.325"}"#.utf8), for: .claude, executable: npm)?.text, "2.1.325")
+        // Another agent's command never changes where it is compared.
+        XCTAssertEqual(AgentRelease.latestURL(for: .codex, executable: "/x/claude/versions/1")?.absoluteString, "https://registry.npmjs.org/@openai/codex/latest")
+    }
+
     func testEveryAgentHasAnUpdateCommand() {
         XCTAssertEqual(AgentRelease.updateCommand(for: .claude), "claude update")
         XCTAssertEqual(AgentRelease.updateCommand(for: .codex), "codex update")
