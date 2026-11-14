@@ -21,6 +21,25 @@ final class FileWatcherTests: XCTestCase {
         withExtendedLifetime(watcher) {}
     }
 
+    func testALinkAnUpdatePointsElsewhereIsTold() throws {
+        // The way an agent updates: its command is a link, which the update points at the new version.
+        let folder = makeTempDirectory()
+        write(folder + "/versions/2.1.323", "old")
+        write(folder + "/versions/2.1.325", "new")
+        let command = folder + "/claude"
+        try FileManager.default.createSymbolicLink(atPath: command, withDestinationPath: folder + "/versions/2.1.323")
+        Thread.sleep(forTimeInterval: 1)
+        let changed = expectation(description: "changed")
+        changed.assertForOverFulfill = false
+        let watcher = FileWatcher(files: [command], latency: 0.1, checkEvery: 0.5) { changed.fulfill() }
+        XCTAssertNotNil(watcher)
+        Thread.sleep(forTimeInterval: 0.5)
+        try FileManager.default.removeItem(atPath: command)
+        try FileManager.default.createSymbolicLink(atPath: command, withDestinationPath: folder + "/versions/2.1.325")
+        wait(for: [changed], timeout: 5)
+        withExtendedLifetime(watcher) {}
+    }
+
     func testAnotherFileOfTheFolderIsNotTold() {
         let folder = makeTempDirectory()
         let lock = folder + "/.skill-lock.json"
