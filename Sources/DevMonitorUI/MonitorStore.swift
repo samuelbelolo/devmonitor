@@ -16,7 +16,9 @@ public final class MonitorStore: ObservableObject {
     /// The swap in use; nil until the first scan and when the system does not say.
     @Published private(set) var swap: SwapUsage?
     /// When the Mac last started: a restart is the only thing that gives swap back.
-    let startedAt = BootTime.read()
+    let startedAt: Date?
+    /// Whether the store shows one fixed scan: it then never reads this Mac, signals no process and calls no Docker.
+    private let isSample: Bool
     /// The windows open right now; while one is, the refresh loops run at their faster pace.
     private var openWindows: Set<AppWindow> = [] { didSet { if openWindows.isEmpty != oldValue.isEmpty { startLoops() } } }
     private var isWindowVisible: Bool { !openWindows.isEmpty }
@@ -34,7 +36,21 @@ public final class MonitorStore: ObservableObject {
     /// Creates the store and starts its two refresh loops: the processes, and the Docker containers.
     /// @example MonitorStore() // scanning every 30 s until the window opens
     public init() {
+        startedAt = BootTime.read()
+        isSample = false
         startLoops()
+    }
+
+    /// Creates a store that shows one fixed scan and never reads this Mac: the documentation's images come from it.
+    /// @example MonitorStore(sample: SampleData.scan(swap: .fine), startedAt: nil).groups.count // 4
+    init(sample: ScanResult, startedAt: Date?) {
+        self.startedAt = startedAt
+        isSample = true
+        groups = sample.groups
+        idleSeconds = sample.idleSeconds
+        agentSessions = sample.agentSessions
+        workingSessions = sample.workingSessions
+        swap = sample.swap
     }
 
     public var totalBytes: UInt64 { groups.reduce(0) { $0 + $1.memoryBytes } }
@@ -80,6 +96,7 @@ public final class MonitorStore: ObservableObject {
     /// Rescans now and publishes the result.
     /// @example await store.refresh()
     public func refresh() async {
+        guard !isSample else { return }
         let result = await scanner.scan(containers: containers.filter { !stoppingContainers.contains($0.id) })
         groups = result.groups
         idleSeconds = result.idleSeconds
@@ -94,6 +111,7 @@ public final class MonitorStore: ObservableObject {
     /// on its own, the root of a service first.
     /// @example store.stop(group.services)
     func stop(_ services: [Service], force: Bool = false) {
+        guard !isSample else { return }
         for service in services {
             _ = ProcessKiller().signal(service.members, with: force ? SIGKILL : SIGTERM)
         }
@@ -112,7 +130,7 @@ public final class MonitorStore: ObservableObject {
     /// @example store.stop(containers: group.containers)
     func stop(containers stopped: [DockerContainer]) {
         let ids = stopped.map(\.id)
-        guard !ids.isEmpty else { return }
+        guard !ids.isEmpty, !isSample else { return }
         stoppingContainers.formUnion(ids)
         Task {
             _ = await BlockingWork.run { DockerCLI.stop(ids) }
@@ -135,6 +153,7 @@ public final class MonitorStore: ObservableObject {
     /// Restarts both refresh loops at the pace of the window: 3 s and 15 s when it is open, 30 s and 60 s otherwise.
     /// @example startLoops()
     private func startLoops() {
+        guard !isSample else { return }
         loop?.cancel()
         dockerLoop?.cancel()
         loop = Self.every(isWindowVisible ? 3 : 30) { [weak self] in

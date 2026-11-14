@@ -31,12 +31,24 @@ public final class ExtensionStore: ObservableObject {
     private var loop: Task<Void, Never>?
     private var toggle: AnyCancellable?
     private var watcher: FileWatcher?
+    /// Whether the store shows one fixed report: it then reads no file of this Mac and never asks GitHub.
+    private let isSample: Bool
+
+    /// Creates a store that shows this report and never reads this Mac: the documentation's images come from it.
+    /// @example ExtensionStore(sample: SampleData.extensions, checkedAt: Date(), versions: versions).report.skills.count // 5
+    init(sample: ExtensionReport, checkedAt: Date?, versions: VersionStore) {
+        self.versions = versions
+        isSample = true
+        report = sample
+        self.checkedAt = checkedAt
+    }
 
     /// Creates the store and starts checking: now, then every fifteen minutes, again when the version check is
     /// switched, and on every change of the skills and plugins files.
     /// @example ExtensionStore(versions: versions)
     public init(versions: VersionStore) {
         self.versions = versions
+        isSample = false
         toggle = versions.$checksLatest.dropFirst().sink { [weak self] _ in
             // The new value is set once this closure returns, so the refresh reads it from a later task.
             Task { await self?.refresh(fetchingUpstream: true) }
@@ -57,6 +69,7 @@ public final class ExtensionStore: ObservableObject {
     /// five minutes ago and none is running. A folder that appeared since launch gets watched from now on.
     /// @example await store.windowOpened()
     func windowOpened() async {
+        guard !isSample else { return }
         if watcher?.watchesEveryFolder != true { watcher = makeWatcher() }
         let isStale = lastFullCheck.map { Date().timeIntervalSince($0) > Self.freshness } ?? true
         await refresh(fetchingUpstream: isStale && !isChecking)
@@ -76,6 +89,7 @@ public final class ExtensionStore: ObservableObject {
     /// `fetchingUpstream` is set, otherwise only about those never asked), then publishes the report.
     /// @example await store.refresh(fetchingUpstream: false)
     public func refresh(fetchingUpstream: Bool) async {
+        guard !isSample else { return }
         var installed = await readInstalled()
         if versions.checksLatest, await ask(installed.skillSources, all: fetchingUpstream) {
             // The files may have changed while GitHub answered, and the refresh for that change may have published

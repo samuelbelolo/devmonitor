@@ -9,6 +9,7 @@ public final class VersionStore: ObservableObject {
     /// Whether the app asks the public registries for new versions; remembered, and on by default.
     @Published var checksLatest: Bool {
         didSet {
+            guard !isSample else { return }
             UserDefaults.standard.set(checksLatest, forKey: Self.checksLatestKey)
             Task { await refresh(fetchingLatest: true) }
         }
@@ -25,10 +26,13 @@ public final class VersionStore: ObservableObject {
     private var watcher: FileWatcher?
     /// The commands the watcher follows.
     private var watched: [String] = []
+    /// Whether the store shows fixed reports: it then reads no command of this Mac and asks no registry.
+    private let isSample: Bool
 
     /// Creates the store and starts checking: now, then every six hours.
     /// @example VersionStore() // reading the installed versions
     public init() {
+        isSample = false
         checksLatest = UserDefaults.standard.object(forKey: Self.checksLatestKey) as? Bool ?? true
         loop = Task { [weak self] in
             while !Task.isCancelled {
@@ -36,6 +40,14 @@ public final class VersionStore: ObservableObject {
                 try? await Task.sleep(for: .seconds(Self.period))
             }
         }
+    }
+
+    /// Creates a store that shows these reports and never reads this Mac: the documentation's images come from it.
+    /// @example VersionStore(sample: SampleData.versions).installedAgents // [.claude, .codex]
+    init(sample: [AgentVersionReport]) {
+        isSample = true
+        checksLatest = true
+        reports = sample
     }
 
     /// The agents installed on this Mac, in the order of `Agent.allCases`.
@@ -58,6 +70,7 @@ public final class VersionStore: ObservableObject {
     /// nothing, so turning the check off is never undone by a slower check still running.
     /// @example await store.refresh(fetchingLatest: true)
     public func refresh(fetchingLatest: Bool) async {
+        guard !isSample else { return }
         refreshes += 1
         let refresh = refreshes
         let checks = checksLatest
