@@ -2,6 +2,9 @@ import Foundation
 
 /// A cap the provider puts on an account over a period: the share of it already used, and when it starts again.
 public struct AccountLimit: Sendable, Equatable {
+    /// From this share used, a limit counts as full.
+    public static let fullAt: Double = 95
+
     public enum Kind: Sendable, Equatable {
         /// The week, every model together.
         case week

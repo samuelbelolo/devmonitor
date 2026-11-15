@@ -42,7 +42,8 @@ To tell which account a Claude Code or Codex session draws on, it also reads, in
   `OPENAI_BASE_URL` is set;
 - the two ids of `oauthAccount` in Claude Code's `.claude.json`, whether its `settings.json`
   sends sessions elsewhere, the account id in Codex's `auth.json`, and the provider in its
-  `config.toml`.
+  `config.toml`. It reads the `.claude.json` of your home folder too, even with no session
+  running, to know the account your next session will use.
 
 What DevMonitor keeps:
 

@@ -8,7 +8,7 @@ enum ResetStrings {
 
     static let confirmTitle = french ? "Utiliser un reset ?" : "Use a reset?"
     static let cancel = french ? "Annuler" : "Cancel"
-    static let confirm = french ? "Utiliser le reset" : "Use the reset"
+    static let confirm = french ? "Utiliser" : "Use"
     static let spending = french ? "Utilisation du reset…" : "Using the reset…"
     static let dismiss = "OK"
     static let littleUsed = french ? "Presque rien n'y est utilisé : ce reset te rendrait très peu." : "Little of it is used: this reset would give back very little."
@@ -20,14 +20,14 @@ enum ResetStrings {
 
     /// Says what a reset starts again: these limits with their share, every limit, or one DevMonitor does not show.
     static func clears(_ limits: [AccountLimit], everything: Bool) -> String {
-        if everything { return french ? "Toutes les limites du compte repartent à zéro tout de suite." : "Every limit of the account starts again at once." }
+        if everything { return french ? "Toutes les limites du compte seront réinitialisées." : "Every limit of the account starts again." }
         let names = limits.map { "\(UsageStrings.name(of: $0.kind)) (\(Int($0.percentUsed.rounded())) %)" }
         switch names.count {
-        case 0: return french ? "Une limite que DevMonitor n'affiche pas repart à zéro." : "A limit DevMonitor does not show starts again."
-        case 1: return french ? "\(names[0]) repart à zéro tout de suite." : "\(names[0]) starts again at once."
+        case 0: return french ? "Une limite que DevMonitor n'affiche pas sera réinitialisée." : "A limit DevMonitor does not show starts again."
+        case 1: return french ? "La limite \(names[0]) sera réinitialisée." : "\(names[0]) starts again."
         default:
             let list = names.dropLast().joined(separator: ", ") + (french ? " et " : " and ") + names.last!
-            return french ? "\(list) repartent à zéro tout de suite." : "\(list) start again at once."
+            return french ? "Les limites \(list) seront réinitialisées." : "\(list) start again."
         }
     }
 
@@ -52,8 +52,8 @@ enum ResetStrings {
 
     static func outcome(_ outcome: ResetSpendOutcome) -> String {
         switch outcome {
-        case .spent: french ? "Reset utilisé : la limite repart à zéro." : "Reset used: the limit starts again."
-        case .nothingToReset: french ? "Rien n'avait besoin d'être remis à zéro : le reset n'a pas été utilisé." : "Nothing needed a reset: the reset was kept."
+        case .spent: french ? "Reset utilisé : la limite a été réinitialisée." : "Reset used: the limit starts again."
+        case .nothingToReset: french ? "Rien n'avait besoin d'être réinitialisé : le reset n'a pas été utilisé." : "Nothing needed a reset: the reset was kept."
         case .noneLeft: french ? "Il n'y a plus de reset sur ce compte." : "There is no reset left on this account."
         case .refused(let status, let reason):
             refused(status: status, reason: reason)

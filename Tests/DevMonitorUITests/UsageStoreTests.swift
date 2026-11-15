@@ -34,13 +34,15 @@ final class UsageStoreTests: XCTestCase {
         XCTAssertEqual(UsageStore.signInMethod(for: .claude).ports, [])
     }
 
-    func testTheMenuBarShowsEachFollowedProviderAndNeverAnEmptyCount() {
+    func testTheMenuBarShowsEachFollowedProviderAndNeverAnEmptyFigure() {
         typealias Part = UsageMenuBarLabel.Part
-        XCTAssertEqual(UsageMenuBarLabel.parts(withRoom: 2, total: 3, followsCodex: false, codexFullest: nil), [Part(agent: .claude, text: "2/3", tint: nil)])
-        XCTAssertEqual(UsageMenuBarLabel.parts(withRoom: 0, total: 0, followsCodex: true, codexFullest: 55), [Part(agent: .codex, text: "55 %", tint: nil)])
-        XCTAssertEqual(UsageMenuBarLabel.parts(withRoom: 1, total: 3, followsCodex: true, codexFullest: 96),
-                       [Part(agent: .claude, text: "1/3", tint: LimitTint.orange), Part(agent: .codex, text: "96 %", tint: Palette.orphan)])
-        XCTAssertEqual(UsageMenuBarLabel.parts(withRoom: 0, total: 0, followsCodex: true, codexFullest: nil), [Part(agent: .codex, text: "–", tint: nil)])
+        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: true, claudePercent: 17, followsCodex: false, codexFullest: nil), [Part(agent: .claude, text: "17 %", tint: nil)])
+        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: false, claudePercent: nil, followsCodex: true, codexFullest: 55), [Part(agent: .codex, text: "55 %", tint: nil)])
+        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: true, claudePercent: 82, followsCodex: true, codexFullest: 96),
+                       [Part(agent: .claude, text: "82 %", tint: LimitTint.color(percentUsed: 82)), Part(agent: .codex, text: "96 %", tint: Palette.orphan)])
+        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: true, claudePercent: nil, followsCodex: true, codexFullest: nil),
+                       [Part(agent: .claude, text: "–", tint: nil), Part(agent: .codex, text: "–", tint: nil)])
+        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: false, claudePercent: nil, followsCodex: false, codexFullest: nil), [Part(agent: .claude, text: "+", tint: nil)])
         XCTAssertEqual(UsageMenuBarLabel.tint(percentUsed: 80), LimitTint.orange)
         XCTAssertNotNil(UsageMenuBarLabel.tint(percentUsed: 88))
         XCTAssertNotEqual(UsageMenuBarLabel.tint(percentUsed: 88), LimitTint.orange)
@@ -48,16 +50,15 @@ final class UsageStoreTests: XCTestCase {
         XCTAssertNil(UsageMenuBarLabel.tint(percentUsed: 79))
     }
 
-    func testTheMenuBarCountsTheAccountsWithRoomAndColorsTheLastOne() {
-        let count = SampleUsage.store().roomCount
-        XCTAssertEqual(count.withRoom, 4)
-        XCTAssertEqual(count.total, 5)
-        XCTAssertNil(UsageMenuBarLabel.tint(withRoom: 2, total: 3))
-        XCTAssertEqual(UsageMenuBarLabel.tint(withRoom: 1, total: 3), LimitTint.orange)
-        XCTAssertEqual(UsageMenuBarLabel.tint(withRoom: 0, total: 3), Palette.orphan)
-        XCTAssertNil(UsageMenuBarLabel.tint(withRoom: 0, total: 0))
-        XCTAssertEqual(UsageMenuBarLabel.text(withRoom: 2, total: 3), "2/3")
-        XCTAssertEqual(UsageMenuBarLabel.text(withRoom: 0, total: 0), "+")
+    func testTheMenuBarShowsTheAccountMostSessionsDrawOn() {
+        let store = SampleUsage.store()
+        XCTAssertEqual(store.busiestClaudePercent, 17)
+        store.noteSessions(["1-1": store.accounts[1].id, "2-1": store.accounts[1].id, "3-1": store.accounts[0].id])
+        XCTAssertEqual(store.busiestClaudePercent, 96)
+        store.noteSessions([:])
+        XCTAssertNil(store.busiestClaudePercent)
+        store.noteDefaultAccount(store.accounts[5].id)
+        XCTAssertEqual(store.busiestClaudePercent, 61)
     }
 
     func testRenamingAndRemovingChangeOnlyTheSampleStore() {

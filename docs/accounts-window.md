@@ -34,21 +34,24 @@ offers. It is kept in your login keychain: see [Privacy](safety-and-privacy.md#p
 
 ## The menu bar item
 
-<img width="170" src="media/menu-bar-accounts.png" alt="The accounts item: the Claude logo and 4/5, then the Codex logo and 55 %">
+<img width="170" src="media/menu-bar-accounts.png" alt="The accounts item: the Claude logo and 17 %, then the Codex logo and 55 %">
 
 The item appears once you follow an account. It shows:
 
-- the Claude logo and how many of your Claude accounts have room, out of how many you follow. An
-  account has room while every one of its limits is under 95 %. The count turns orange when one
-  account has room left, and red when none has;
-- the Codex logo and the share used of Codex's fullest limit, orange from 80 % and red from 95 %.
+- the Claude logo and the share used of the fullest limit of the Claude account most of your
+  running sessions draw on, the fullest of them on a tie. With no session running, it is the
+  account Claude Code is signed in with, the one your next session will use, and **–** when you
+  do not follow that account;
+- the Codex logo and the share used of Codex's fullest limit.
+
+Each share turns orange from 80 % and red from 95 %.
 
 ## Reading the window
 
-<p align="center"><img width="640" src="media/accounts-window.png" alt="The accounts window: 4 of 5 Claude accounts with room, six accounts in two columns, each with its weekly and Fable limits, a blue dot and a session count on three of them, and a ticket with a count beside two limits"></p>
+<p align="center"><img width="640" src="media/accounts-window.png" alt="The accounts window: six accounts in two columns, each with its weekly and Fable limits, a blue dot and a session count on three of them, and a ticket with a count beside two limits"></p>
 
-The top of the window repeats the Claude count. Each account has a block, in two columns from
-three accounts on: Claude's accounts first, the one with the most room first, then Codex's.
+Each account has a block, in two columns from three accounts on: Claude's accounts first, the one
+with the most room first, then Codex's. An account's room is what is left of its fullest limit.
 
 - **One gauge per limit**, filled with the share already used: the week, and the week on one
   model (Fable). Codex's limits are named by their length. A gauge turns a strong orange from
@@ -74,7 +77,7 @@ signed in with: the two ids of `oauthAccount` in `.claude.json`, or the account 
 
 ## Free resets
 
-<img align="right" width="360" src="media/accounts-reset.png" alt="The confirmation of a reset: Fable (64 %) starts again at once, you will have 1 left, Cancel and Use the reset">
+<img align="right" width="360" src="media/accounts-reset.png" alt="The confirmation of a reset: Fable (64 %) starts again, you will have 1 left, Cancel and Use">
 
 Claude and OpenAI sometimes grant an account free resets, which start some of its limits again at
 once. A ticket with a number shows beside the limit they start again. A Codex reset starts every
@@ -82,7 +85,7 @@ limit of the account again.
 
 A click on the ticket opens a confirmation inside the account's block. It says what starts again
 with its share now, how many resets will be left, when the reset expires, and warns when almost
-nothing is used. **Use the reset** sends one request. A refusal shows the provider's status and
+nothing is used. **Use** sends one request. A refusal shows the provider's status and
 its words; with no answer, DevMonitor reads the account again to learn whether the reset was used,
 and never sends the request again by itself.
 

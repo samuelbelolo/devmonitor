@@ -116,10 +116,10 @@ gives one command that updates everything, or one command per source (**Copy**).
 ### Every Claude and Codex account, and the room it has
 
 Follow your Claude and Codex accounts from the last line of the agents window, each with a
-sign-in of its own in your browser. A third item then shows how many Claude accounts still have
-room, and the share used of Codex's fullest limit:
+sign-in of its own in your browser. A third item then shows the share used on the Claude account
+your sessions draw on most, and the share used of Codex's fullest limit:
 
-<img width="170" src="docs/media/menu-bar-accounts.png" alt="The accounts item: the Claude logo and 4/5, then the Codex logo and 55 %">
+<img width="170" src="docs/media/menu-bar-accounts.png" alt="The accounts item: the Claude logo and 17 %, then the Codex logo and 55 %">
 
 Its window lists, for each account:
 
@@ -129,7 +129,7 @@ Its window lists, for each account:
 - a ticket with the number of free resets, beside the limit they start again. A click asks
   before using one.
 
-<p align="center"><img width="640" src="docs/media/accounts-window.png" alt="The accounts window: 4 of 5 Claude accounts with room, six accounts in two columns with their weekly and Fable limits, a blue dot and a session count on the accounts in use, and a ticket beside the limits that have a free reset"></p>
+<p align="center"><img width="640" src="docs/media/accounts-window.png" alt="The accounts window: six accounts in two columns with their weekly and Fable limits, a blue dot and a session count on the accounts in use, and a ticket beside the limits that have a free reset"></p>
 
 [The accounts window, in detail →](docs/accounts-window.md)
 

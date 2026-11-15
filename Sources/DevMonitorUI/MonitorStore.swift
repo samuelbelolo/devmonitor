@@ -13,6 +13,8 @@ public final class MonitorStore: ObservableObject {
     @Published private(set) var workingSessions: Set<String> = []
     /// The key of the tracked account each session draws on, by session id; absent when it cannot be told.
     @Published private(set) var sessionAccounts: [String: String] = [:]
+    /// The key of the Claude account a new session would sign in with; nil when Claude Code is signed out.
+    @Published private(set) var defaultClaudeAccount: String?
     /// When each process was asked to stop; 5 s later, a row whose processes are still alive offers to force them.
     @Published private(set) var stopRequests = StopRequests()
     /// The swap in use; nil until the first scan and when the system does not say.
@@ -53,6 +55,7 @@ public final class MonitorStore: ObservableObject {
         agentSessions = sample.agentSessions
         workingSessions = sample.workingSessions
         sessionAccounts = sample.sessionAccounts
+        defaultClaudeAccount = sample.defaultClaudeAccount
         swap = sample.swap
     }
 
@@ -106,6 +109,7 @@ public final class MonitorStore: ObservableObject {
         agentSessions = result.agentSessions
         workingSessions = result.workingSessions
         sessionAccounts = result.sessionAccounts
+        defaultClaudeAccount = result.defaultClaudeAccount
         swap = result.swap
         clock.update(hasWork: !workingSessions.isEmpty)
         stopRequests.prune(keeping: result.processIdentities)

@@ -2,18 +2,19 @@ import DevMonitorCore
 import Foundation
 import SwiftUI
 
-/// Made-up Claude accounts for reviewing the accounts window: one with room, one almost full, one whose sign-in ended.
+/// Made-up Claude and Codex accounts for reviewing the accounts window: one with room, one almost full, one whose
+/// sign-in ended.
 /// Nothing here is read from the Mac that renders it.
 @MainActor
 public enum SampleUsage {
     /// Returns the accounts window filled with the sample accounts, with a sign-in to confirm when `confirming` is set.
-    /// @example SampleUsage.window() // "2/3 Claude accounts with room"
+    /// @example SampleUsage.window() // ↻ and +, then six accounts in two columns
     public static func window(confirming: Bool = false) -> some View {
         UsageContentView().environmentObject(store(confirming: confirming))
     }
 
     /// Returns the menu bar item of the accounts, with the sample accounts.
-    /// @example SampleUsage.menuBar() // Claude's logo, then "2/3"
+    /// @example SampleUsage.menuBar() // Claude's logo and "17 %", then Codex's and "55 %"
     public static func menuBar() -> some View {
         HStack(spacing: 5) { UsageMenuBarLabel() }
             .font(.system(size: 13, weight: .medium))
@@ -35,7 +36,7 @@ public enum SampleUsage {
 
     /// Returns a store that shows the sample accounts and never reads anything; with `confirming`, a new account waits
     /// for confirmation.
-    /// @example SampleUsage.store().roomCount // (withRoom: 2, total: 3)
+    /// @example SampleUsage.store().accounts.count // 6
     static func store(confirming: Bool = false) -> UsageStore {
         let now = Date()
         let friday = now.addingTimeInterval(5 * 86_400)
@@ -80,7 +81,7 @@ public enum SampleUsage {
 
     /// Returns the confirmation of a Fable reset, for the documentation: no calendar date in it, so the image is the
     /// same whatever day it is rendered.
-    /// @example SampleUsage.resetConfirmation() // "Use a reset? Fable (64 %) starts again at once. …"
+    /// @example SampleUsage.resetConfirmation() // "Use a reset? Fable (64 %) starts again. …"
     public static func resetConfirmation() -> some View {
         let fable = ResetCredit(id: "sample-fable", left: 2, clears: [.weekOnModel("Fable")], shownOn: .weekOnModel("Fable"), endsAt: nil)
         let current = AccountUsage(limits: [AccountLimit(kind: .week, percentUsed: 58, resetsAt: nil), AccountLimit(kind: .weekOnModel("Fable"), percentUsed: 64, resetsAt: nil)], resetCredits: [fable])

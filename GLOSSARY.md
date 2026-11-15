@@ -24,7 +24,7 @@ _Avoid_: Availability, headroom
 
 **Reset**:
 A free reset the provider grants an account, which its owner spends when they choose: spending one starts some of its limits again at once. Shown as a ticket with a count beside the limit it starts again.
-_Avoid_: Credit, grant, voucher. Not to be confused with a limit starting again on its own date ("repart dans").
+_Avoid_: Credit, grant, voucher. Not to be confused with a limit starting again on its own date, which the French window also writes "reset dans".
 
 **Account in use**:
 An account that a running session of an agent on this Mac is signed in to.

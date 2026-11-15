@@ -1,8 +1,8 @@
 import DevMonitorCore
 import SwiftUI
 
-/// The window opened from the accounts menu bar item: how many Claude accounts have room, then every account's
-/// limits, Claude's then Codex's, in one grid.
+/// The window opened from the accounts menu bar item: every account's limits, Claude's then Codex's, in one grid,
+/// under the buttons that read them again and add an account.
 public struct UsageContentView: View {
     @EnvironmentObject private var usage: UsageStore
 
@@ -31,17 +31,9 @@ public struct UsageContentView: View {
         .onAppear { usage.windowOpened() }
     }
 
-    /// The Claude count when a Claude account is followed, else Codex's name; then the + menu.
+    /// The button that reads every account again, then the + menu, on the right.
     private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            let count = usage.roomCount
-            if count.total > 0 {
-                Text("\(count.withRoom)/\(count.total)").font(.system(size: 32, weight: .bold)).monospacedDigit()
-                Text(UsageStrings.withRoom).foregroundStyle(.secondary)
-            } else {
-                AgentLogoView(agent: .codex, size: 18)
-                Text(UsageStrings.name(of: .codex)).font(.system(size: 18, weight: .bold))
-            }
+        HStack(spacing: 8) {
             Spacer()
             RefreshButton()
             Menu {
@@ -165,7 +157,7 @@ struct SignInStepView: View {
                     ProgressView().controlSize(.small)
                     Text(UsageStrings.waitingForBrowser)
                     Spacer(minLength: 6)
-                    Button(UsageStrings.cancel) { usage.cancelSignIn() }
+                    Button(UsageStrings.cancel) { usage.cancelSignIn() }.buttonStyle(.pill)
                 }
             }
         case .confirm(let signIn, let replaces):
@@ -175,7 +167,7 @@ struct SignInStepView: View {
                 HStack(spacing: 8) {
                     Text(message).foregroundStyle(Palette.orphan).fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 6)
-                    Button(UsageStrings.close) { usage.cancelSignIn() }
+                    Button(UsageStrings.close) { usage.cancelSignIn() }.buttonStyle(.pill)
                 }
             }
         }
@@ -210,8 +202,9 @@ struct ConfirmSignInView: View {
                 TextField(signIn.account.email, text: $name).textFieldStyle(.roundedBorder).onSubmit { usage.confirmSignIn(name: name) }
             }
             HStack {
-                Button(UsageStrings.add) { usage.confirmSignIn(name: name) }.keyboardShortcut(.defaultAction)
-                Button(UsageStrings.cancel) { usage.cancelSignIn() }
+                Spacer()
+                Button(UsageStrings.cancel) { usage.cancelSignIn() }.buttonStyle(.pill)
+                Button(UsageStrings.add) { usage.confirmSignIn(name: name) }.buttonStyle(.prominentPill).keyboardShortcut(.defaultAction)
             }
         }
     }

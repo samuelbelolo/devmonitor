@@ -35,12 +35,6 @@ final class AccountReadingTests: XCTestCase {
         XCTAssertTrue(reading.isDue(at: start.addingTimeInterval(121)))
     }
 
-    func testTheCountIsTheAccountsWhoseEveryLimitIsUnderNinetyFive() {
-        let count = RoomCount.of([usage(15, 17), usage(94.9), usage(95), usage(20, 99), nil, usage()])
-        XCTAssertEqual(count.withRoom, 2)
-        XCTAssertEqual(count.total, 6)
-    }
-
     func testANewSignInOfATrackedAccountReplacesItAndKeepsItsName() {
         let first = TrackedAccount(account: UsageFakes.account, name: "Perso", signInEndsAt: start)
         let other = AccountID(account: "a", organization: "o", email: "other@example.com")

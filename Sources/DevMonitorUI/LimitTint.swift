@@ -12,8 +12,8 @@ enum LimitTint {
     /// @example LimitTint.color(percentUsed: 96) // Palette.orphan
     static func color(percentUsed: Double) -> Color? {
         guard percentUsed >= from else { return nil }
-        if percentUsed >= RoomCount.fullAt { return Palette.orphan }
-        let toRed = (percentUsed - from) / (RoomCount.fullAt - from)
+        if percentUsed >= AccountLimit.fullAt { return Palette.orphan }
+        let toRed = (percentUsed - from) / (AccountLimit.fullAt - from)
         return Color(red: 1.0, green: 0.58 - 0.16 * toRed, blue: 0.42 * toRed)
     }
 }

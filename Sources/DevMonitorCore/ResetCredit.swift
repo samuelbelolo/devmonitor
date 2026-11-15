@@ -2,7 +2,7 @@ import Foundation
 
 /// A free reset the provider grants an account, which its owner spends when they choose: spending one starts some of
 /// the account's limits again at once. Not to be confused with a limit starting again on its own date
-/// (`AccountLimit.resetsAt`, « repart dans » in the window).
+/// (`AccountLimit.resetsAt`, « reset dans » in the French window).
 public struct ResetCredit: Sendable, Equatable {
     /// The provider's id of the grant, sent to spend it; nil when the provider picks which one it spends (Codex).
     public let id: String?

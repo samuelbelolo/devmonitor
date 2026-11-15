@@ -42,7 +42,7 @@ struct AccountUsageBlock: View {
 
     /// Returns the account's first line: its logo, its name or the field that renames it, the blue dot and count of
     /// the sessions running on it when given, then when its limits start again and its menu.
-    /// @example nameRow(reading, sharedReset: friday, sessions: 4) // ✳ Perso ● 4   repart dans 4 j 23 h  ⋯
+    /// @example nameRow(reading, sharedReset: friday, sessions: 4) // ✳ Perso ● 4   reset dans 4 j 23 h  ⋯
     private func nameRow(_ reading: AccountReading, sharedReset: Date?, sessions: Int?) -> some View {
         HStack(spacing: 6) {
             AgentLogoView(agent: account.account.provider.agent, size: 13)
@@ -64,7 +64,7 @@ struct AccountUsageBlock: View {
     }
 
     /// Returns the confirmation of a reset while it is open, then the spend in progress or what it gave.
-    /// @example resetPanel(reading) // "Utiliser un reset ? …  [Annuler] [Utiliser le reset]"
+    /// @example resetPanel(reading) // "Utiliser un reset ? …  [Annuler] [Utiliser]"
     @ViewBuilder private func resetPanel(_ reading: AccountReading) -> some View {
         if usage.spending.contains(account.id) {
             ResetOutcomeNote(outcome: nil) {}
@@ -117,7 +117,7 @@ struct AccountUsageBlock: View {
                 Text(reading.problem == .needsSignIn ? UsageStrings.signInEnded : account.signInEndsAt.map(UsageStrings.signInEnds) ?? "")
                     .foregroundStyle(Palette.idle)
                 Spacer(minLength: 6)
-                Button(UsageStrings.signInAgain) { usage.startSignIn(account.account.provider) }
+                Button(UsageStrings.signInAgain) { usage.startSignIn(account.account.provider) }.buttonStyle(.pill)
             }
             .font(.system(size: 11))
         }

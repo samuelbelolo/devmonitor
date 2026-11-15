@@ -28,6 +28,8 @@ public final class UsageStore: ObservableObject {
     @Published private(set) var isRefreshing = false
     /// How many running agent sessions draw on each account, by account key; absent when none.
     @Published private(set) var runningSessions: [String: Int] = [:]
+    /// The key of the Claude account a new session would sign in with; nil when Claude Code is signed out.
+    @Published private(set) var defaultAccount: String?
     /// The accounts on which a reset is being spent.
     @Published var spending: Set<String> = []
     /// What the last spend on each account gave, shown until its owner dismisses it.
@@ -55,13 +57,14 @@ public final class UsageStore: ObservableObject {
     }
 
     /// Creates a store that shows these accounts and readings and never reads, signs in or saves anything.
-    /// @example UsageStore(sample: accounts, readings: readings).roomCount // (withRoom: 2, total: 3)
+    /// @example UsageStore(sample: accounts, readings: readings).hasAccounts // true
     init(sample accounts: [TrackedAccount], readings: [String: AccountReading], signInStep: SignInStep = .idle,
-         runningSessions: [String: Int] = [:]) {
+         runningSessions: [String: Int] = [:], defaultAccount: String? = nil) {
         self.accounts = accounts
         self.readings = readings
         self.signInStep = signInStep
         self.runningSessions = runningSessions
+        self.defaultAccount = defaultAccount
         reader = nil
         defaults = nil
     }
@@ -71,6 +74,12 @@ public final class UsageStore: ObservableObject {
     public func noteSessions(_ sessionAccounts: [String: String]) {
         let counts = sessionAccounts.values.reduce(into: [String: Int]()) { $0[$1, default: 0] += 1 }
         if counts != runningSessions { runningSessions = counts }
+    }
+
+    /// Keeps the key of the Claude account a new session would sign in with.
+    /// @example store.noteDefaultAccount("acc:org"); store.defaultAccount // "acc:org"
+    public func noteDefaultAccount(_ key: String?) {
+        if key != defaultAccount { defaultAccount = key }
     }
 
     /// Returns a store that follows no account and never reads anything, for a window rendered outside the app.
@@ -105,9 +114,15 @@ public final class UsageStore: ObservableObject {
         }.map(\.element)
     }
 
-    /// How many Claude accounts have room, out of how many are followed: the count of the menu bar and the window.
-    var roomCount: (withRoom: Int, total: Int) {
-        RoomCount.of(accounts.filter { $0.account.provider == .claude }.map { reading(of: $0).usage })
+    /// The share used of the fullest limit of the Claude account most running sessions draw on, or of the one a new
+    /// session would use when none runs: the menu bar's Claude figure. Nil when neither is followed or it was never
+    /// read.
+    var busiestClaudePercent: Double? {
+        let claude = accounts.filter { $0.account.provider == .claude }
+        let percents = claude.reduce(into: [String: Double]()) { $0[$1.id] = reading(of: $1).usage?.fullest?.percentUsed }
+        let key = BusiestAccount.key(among: claude.map(\.id), sessions: runningSessions, percentUsed: percents,
+                                     fallback: defaultAccount)
+        return key.flatMap { percents[$0] }
     }
 
     /// Whether an account of this provider is followed.

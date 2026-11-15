@@ -28,17 +28,8 @@ struct ResetConfirmation: View {
             }
             HStack {
                 Spacer()
-                Button(ResetStrings.cancel, action: cancel)
-                // Drawn by hand: a prominent button turns grey whenever a menu bar window is not the key one.
-                Button(action: confirm) {
-                    Text(ResetStrings.confirm).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
-                        .padding(.horizontal, 10).padding(.vertical, 3.5)
-                        .background(Color.orange, in: Capsule())
-                        .contentShape(Capsule())
-                }
-                .buttonStyle(.plain)
-                .disabled(credit == nil)
-                .opacity(credit == nil ? 0.4 : 1)
+                Button(ResetStrings.cancel, action: cancel).buttonStyle(.pill)
+                Button(ResetStrings.confirm, action: confirm).buttonStyle(.prominentPill).disabled(credit == nil)
             }
             .padding(.top, 2)
         }
@@ -67,7 +58,7 @@ struct ResetOutcomeNote: View {
             if let outcome {
                 Text(ResetStrings.outcome(outcome)).foregroundStyle(outcome == .spent ? Color.primary : Color.secondary)
                 Spacer(minLength: 6)
-                Button(ResetStrings.dismiss, action: dismiss).controlSize(.small)
+                Button(ResetStrings.dismiss, action: dismiss).buttonStyle(.pill)
             } else {
                 ProgressView().controlSize(.small)
                 Text(ResetStrings.spending).foregroundStyle(.secondary)

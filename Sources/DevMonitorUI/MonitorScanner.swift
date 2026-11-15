@@ -29,7 +29,8 @@ actor MonitorScanner {
         return ScanResult(
             groups: scan.groups, idleSeconds: idleSeconds, agentSessions: scan.agentSessions,
             workingSessions: workTracker.record(scan.agentSessions, at: now), processIdentities: scan.processIdentities,
-            swap: SwapUsage.read(), sessionAccounts: accounts(of: scan.agentSessions))
+            swap: SwapUsage.read(), sessionAccounts: accounts(of: scan.agentSessions),
+            defaultClaudeAccount: accounts.accountKey(agent: .claude, environment: ["HOME": NSHomeDirectory()]))
     }
 
     /// Returns the key of the tracked account each session draws on, by session id.

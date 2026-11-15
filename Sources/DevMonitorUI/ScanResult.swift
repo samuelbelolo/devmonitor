@@ -15,4 +15,6 @@ struct ScanResult: Sendable {
     let swap: SwapUsage?
     /// The key of the tracked account each session draws on, by session id; absent when it cannot be told.
     var sessionAccounts: [String: String] = [:]
+    /// The key of the Claude account a new session would sign in with; nil when Claude Code is signed out.
+    var defaultClaudeAccount: String?
 }

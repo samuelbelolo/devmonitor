@@ -6,11 +6,10 @@ enum UsageStrings {
     private static let french = AppLanguage.current == .french
     private static let locale = Locale(identifier: french ? "fr_FR" : "en_US")
 
-    static let withRoom = french ? "comptes Claude avec de la marge" : "Claude accounts with room"
     static let quotasEntry = french ? "Quotas Claude et Codex" : "Claude and Codex quotas"
     static let quotas = "Quotas"
     static let emptyPitch = french
-        ? "Vois d'un coup d'œil où en sont les quotas de chacun de tes comptes, et quand ils repartent."
+        ? "Vois d'un coup d'œil où en sont les quotas de chacun de tes comptes, et quand ils seront réinitialisés."
         : "See at a glance where the quotas of each of your accounts stand, and when they start again."
     static let connect = french ? "Connecter" : "Sign in"
     static let name = french ? "Nom" : "Name"
@@ -97,15 +96,15 @@ enum UsageStrings {
         return "\(Int((Double(seconds) / 3600).rounded())) h"
     }
 
-    /// Returns how long until a limit starts again.
-    /// @example UsageStrings.resetsIn(394_380) // "resets in 4 d 13 h"
     static func inUse(_ sessions: Int) -> String {
         let noun = sessions > 1 ? "sessions" : "session"
         return french ? "en cours · \(sessions) \(noun)" : "in use · \(sessions) \(noun)"
     }
 
+    /// Returns how long until a limit starts again.
+    /// @example UsageStrings.resetsIn(394_380) // "resets in 4 d 13 h"
     static func resetsIn(_ seconds: Int) -> String {
-        french ? "repart dans \(countdown(seconds))" : "resets in \(countdown(seconds))"
+        french ? "reset dans \(countdown(seconds))" : "resets in \(countdown(seconds))"
     }
 
     /// Returns a wait in its two largest units: days and hours, hours and minutes, or minutes.
