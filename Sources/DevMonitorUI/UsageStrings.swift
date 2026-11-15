@@ -14,35 +14,35 @@ enum UsageStrings {
     static let connect = french ? "Connecter" : "Sign in"
     static let name = french ? "Nom" : "Name"
     static let emptyFinePrint = french
-        ? "Tu l'autorises dans ton navigateur. DevMonitor s'en sert pour lire l'usage du compte, et pour utiliser un reset quand tu le confirmes. Il garde cet accès dans ton Trousseau."
-        : "You allow it in your browser. DevMonitor uses it to read the account's usage, and to use a reset when you confirm it. It keeps that access in your keychain."
+        ? "Tu autorises DevMonitor dans ton navigateur. Il lit alors l'usage du compte, et n'utilise un reset que quand tu le confirmes. Il garde cet accès dans ton Trousseau."
+        : "You allow DevMonitor in your browser. It then reads the account's usage, and uses a reset only when you confirm it. It keeps that access in your keychain."
     static let signInToAnAccount = french ? "Connecter un compte" : "Sign in to an account"
     static let readNow = french ? "Relire tous les comptes maintenant" : "Read every account now"
 
     /// Returns the share of a limit already used, said as such: the gauge fills as the account is used.
     /// @example UsageStrings.used(15) // "15 % used"
     static func used(_ percent: Int) -> String {
-        french ? "\(percent) % utilisé\(percent > 1 ? "s" : "")" : "\(percent) % used"
+        french ? "\(percent)\u{00A0}% utilisé\(percent > 1 ? "s" : "")" : "\(percent)\u{00A0}% used"
     }
     static let waitingForBrowser = french ? "Autorise DevMonitor dans ton navigateur…" : "Allow DevMonitor in your browser…"
     static let add = french ? "Ajouter" : "Add"
     static let cancel = french ? "Annuler" : "Cancel"
     static let close = french ? "Fermer" : "Close"
-    static let replacesFollowed = french ? "Il remplace la connexion de ce compte déjà suivi." : "It replaces the sign-in of this account, already followed."
-    static let notKept = french ? "Le Trousseau n'a pas gardé la connexion : rien n'a changé." : "The keychain did not keep the sign-in: nothing changed."
+    static let replacesFollowed = french ? "Ce compte est déjà suivi. Ce nouvel accès remplacera l'ancien." : "This account is already followed. This new access will replace the old one."
+    static let notKept = french ? "Le Trousseau n'a pas enregistré l'accès, donc rien n'a changé. Réessaie." : "The keychain did not save the access, so nothing changed. Try again."
     static let notReadYet = french ? "Pas encore lu." : "Not read yet."
     static let signInAgain = french ? "Reconnecter" : "Sign in again"
-    static let signInEnded = french ? "La connexion a pris fin." : "The sign-in has ended."
+    static let signInEnded = french ? "L'accès à ce compte a expiré." : "Access to this account has expired."
     static let unreachable = french ? "Lecture impossible pour l'instant." : "Could not read it right now."
     static let rename = french ? "Renommer" : "Rename"
     static let remove = french ? "Retirer" : "Remove"
     static let week = french ? "Semaine" : "Week"
-    static let fiveHours = french ? "5 heures" : "5 hours"
+    static let fiveHours = french ? "5\u{00A0}heures" : "5\u{00A0}hours"
 
     /// Returns the line that names the account a sign-in reads.
-    /// @example UsageStrings.signedIn("dev@example.com") // "Signed in to dev@example.com"
+    /// @example UsageStrings.signedIn("dev@example.com") // "Allowed: dev@example.com"
     static func signedIn(_ email: String) -> String {
-        french ? "Compte obtenu : \(email)" : "Signed in to \(email)"
+        french ? "Compte autorisé\u{00A0}: \(email)" : "Allowed: \(email)"
     }
 
     /// Returns the name of a provider as the window shows it.
@@ -61,17 +61,17 @@ enum UsageStrings {
     }
 
     /// Returns why a sign-in to a provider's account did not go through.
-    /// @example UsageStrings.failure(SignInFlow.Failure.noAnswer, provider: .claude) // "The browser did not come back in time."
+    /// @example UsageStrings.failure(SignInFlow.Failure.noAnswer, provider: .claude) // "No authorization came back within 5 minutes. Try again."
     static func failure(_ error: Error, provider: Provider) -> String {
         let company = provider == .claude ? "Anthropic" : "OpenAI"
         return switch error as? SignInFlow.Failure {
-        case .noAnswer: french ? "Le navigateur n'est pas revenu à temps." : "The browser did not come back in time."
-        case .stateMismatch: french ? "La réponse du navigateur n'était pas celle de cette connexion." : "The browser's answer was not this sign-in's."
-        case .refused(let status): french ? "\(company) a refusé la connexion (\(status))." : "\(company) refused the sign-in (\(status))."
-        case .unreachable: french ? "\(company) est injoignable." : "\(company) cannot be reached."
-        case .unreadableAnswer: french ? "La réponse de \(company) est illisible." : "\(company)'s answer could not be read."
-        case .portTaken: french ? "Une autre connexion est en cours sur ce Mac : réessaie quand elle sera finie." : "Another sign-in is under way on this Mac: try again once it is done."
-        case nil: french ? "La connexion n'a pas pu démarrer." : "The sign-in could not start."
+        case .noAnswer: french ? "Aucune autorisation reçue en 5\u{00A0}minutes. Réessaie." : "No authorization came back within 5 minutes. Try again."
+        case .stateMismatch: french ? "L'autorisation reçue ne correspond pas à cette demande. Réessaie." : "The authorization received does not match this request. Try again."
+        case .refused(let status): french ? "\(company) a refusé l'autorisation (\(status))." : "\(company) refused the authorization (\(status))."
+        case .unreachable: french ? "\(company) ne répond pas. Vérifie ta connexion internet, puis réessaie." : "\(company) does not answer. Check your internet connection, then try again."
+        case .unreadableAnswer: french ? "La réponse d'\(company) est illisible. Réessaie plus tard." : "\(company)'s answer could not be read. Try again later."
+        case .portTaken: french ? "Le port de connexion de Codex est déjà pris, sans doute par une commande codex login en cours. Termine-la, puis réessaie." : "Codex's sign-in port is already taken, likely by a codex login under way. Finish it, then try again."
+        case nil: french ? "L'autorisation n'a pas pu démarrer. Réessaie." : "The authorization could not start. Try again."
         }
     }
 
@@ -93,12 +93,12 @@ enum UsageStrings {
         func near(_ target: Double) -> Bool { abs(Double(seconds) - target) <= target * 0.05 }
         if near(86_400) { return french ? "Jour" : "Day" }
         if near(30 * 86_400) { return french ? "Mois" : "Month" }
-        return "\(Int((Double(seconds) / 3600).rounded())) h"
+        return "\(Int((Double(seconds) / 3600).rounded()))\u{00A0}h"
     }
 
     static func inUse(_ sessions: Int) -> String {
         let noun = sessions > 1 ? "sessions" : "session"
-        return french ? "en cours · \(sessions) \(noun)" : "in use · \(sessions) \(noun)"
+        return french ? "en cours · \(sessions)\u{00A0}\(noun)" : "in use · \(sessions)\u{00A0}\(noun)"
     }
 
     /// Returns how long until a limit starts again.
@@ -112,8 +112,8 @@ enum UsageStrings {
     static func countdown(_ seconds: Int) -> String {
         let left = max(seconds, 0)
         let days = left / 86_400, hours = left % 86_400 / 3600, minutes = left % 3600 / 60
-        if days > 0 { return hours > 0 ? "\(days) \(french ? "j" : "d") \(hours) h" : "\(days) \(french ? "j" : "d")" }
-        if hours > 0 { return minutes > 0 ? (french ? "\(hours) h \(minutes)" : "\(hours) h \(minutes) min") : "\(hours) h" }
+        if days > 0 { return hours > 0 ? "\(days)\u{00A0}\(french ? "j" : "d")\u{00A0}\(hours)\u{00A0}h" : "\(days)\u{00A0}\(french ? "j" : "d")" }
+        if hours > 0 { return minutes > 0 ? (french ? "\(hours)\u{00A0}h\u{00A0}\(minutes)" : "\(hours)\u{00A0}h\u{00A0}\(minutes)\u{00A0}min") : "\(hours)\u{00A0}h" }
         return "\(max(minutes, 1)) min"
     }
 
@@ -131,9 +131,9 @@ enum UsageStrings {
     }
 
     /// Returns the day the sign-in ends, said ahead of time.
-    /// @example UsageStrings.signInEnds(date) // "The sign-in ends December 13."
+    /// @example UsageStrings.signInEnds(date) // "Access to this account expires December 13."
     static func signInEnds(_ date: Date) -> String {
         let day = date.formatted(.dateTime.day().month(.wide).locale(locale))
-        return french ? "La connexion prend fin le \(day)." : "The sign-in ends \(day)."
+        return french ? "L'accès à ce compte expire le \(day)." : "Access to this account expires \(day)."
     }
 }

@@ -127,7 +127,7 @@ struct AccountUsageBlock: View {
     }
 
     /// Returns the age of the reading, then why the last read gave nothing new, if it did not.
-    /// @example status(reading, at: Date()) // "read 3 min ago · Could not read it right now."
+    /// @example status(reading, at: Date()) // "read 3 min ago · Could not read this account right now."
     private func status(_ reading: AccountReading, at now: Date) -> String {
         let age = reading.readAt.map { UsageStrings.readAgo(DisplayFormat.duration(seconds: Int(now.timeIntervalSince($0)))) }
         let problem: String? = switch reading.problem {

@@ -36,10 +36,10 @@ final class UsageStoreTests: XCTestCase {
 
     func testTheMenuBarShowsEachFollowedProviderAndNeverAnEmptyFigure() {
         typealias Part = UsageMenuBarLabel.Part
-        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: true, claudePercent: 17, followsCodex: false, codexFullest: nil), [Part(agent: .claude, text: "17 %", tint: nil)])
-        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: false, claudePercent: nil, followsCodex: true, codexFullest: 55), [Part(agent: .codex, text: "55 %", tint: nil)])
+        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: true, claudePercent: 17, followsCodex: false, codexFullest: nil), [Part(agent: .claude, text: "17\u{00A0}%", tint: nil)])
+        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: false, claudePercent: nil, followsCodex: true, codexFullest: 55), [Part(agent: .codex, text: "55\u{00A0}%", tint: nil)])
         XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: true, claudePercent: 82, followsCodex: true, codexFullest: 96),
-                       [Part(agent: .claude, text: "82 %", tint: LimitTint.color(percentUsed: 82)), Part(agent: .codex, text: "96 %", tint: Palette.orphan)])
+                       [Part(agent: .claude, text: "82\u{00A0}%", tint: LimitTint.color(percentUsed: 82)), Part(agent: .codex, text: "96\u{00A0}%", tint: Palette.orphan)])
         XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: true, claudePercent: nil, followsCodex: true, codexFullest: nil),
                        [Part(agent: .claude, text: "–", tint: nil), Part(agent: .codex, text: "–", tint: nil)])
         XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: false, claudePercent: nil, followsCodex: false, codexFullest: nil), [Part(agent: .claude, text: "+", tint: nil)])
@@ -48,6 +48,15 @@ final class UsageStoreTests: XCTestCase {
         XCTAssertNotEqual(UsageMenuBarLabel.tint(percentUsed: 88), LimitTint.orange)
         XCTAssertEqual(UsageMenuBarLabel.tint(percentUsed: 95), Palette.orphan)
         XCTAssertNil(UsageMenuBarLabel.tint(percentUsed: 79))
+    }
+
+    func testAFigureNeverBreaksFromItsUnitAtTheEndOfALine() {
+        for text in [UsageStrings.countdown(394_380), UsageStrings.countdown(7_800), UsageMenuBarLabel.text(percentUsed: 17)] {
+            XCTAssertFalse(text.contains(" "), text)
+        }
+        for text in [UsageStrings.used(15), ResetStrings.confirmTitle, ResetStrings.littleUsed(under: 10), UsageStrings.signedIn("dev@example.com")] {
+            XCTAssertNil(text.range(of: #" [?:%]"#, options: .regularExpression), text)
+        }
     }
 
     func testTheMenuBarShowsTheAccountMostSessionsDrawOn() {
@@ -82,8 +91,8 @@ final class UsageStoreTests: XCTestCase {
     }
 
     func testTheLabelSaysHowManySessionsRun() {
-        XCTAssertTrue(["en cours · 1 session", "in use · 1 session"].contains(UsageStrings.inUse(1)))
-        XCTAssertTrue(["en cours · 12 sessions", "in use · 12 sessions"].contains(UsageStrings.inUse(12)))
+        XCTAssertTrue(["en cours · 1\u{00A0}session", "in use · 1\u{00A0}session"].contains(UsageStrings.inUse(1)))
+        XCTAssertTrue(["en cours · 12\u{00A0}sessions", "in use · 12\u{00A0}sessions"].contains(UsageStrings.inUse(12)))
     }
 
     func testTheSampleStoreNeverSpendsAReset() async throws {

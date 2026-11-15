@@ -41,7 +41,7 @@ public struct UsageMenuBarLabel: View {
     /// Returns a share used as the menu bar writes it: "–" when it is not known.
     /// @example UsageMenuBarLabel.text(percentUsed: 54.6) // "55 %"
     static func text(percentUsed: Double?) -> String {
-        percentUsed.map { "\(Int($0.rounded())) %" } ?? "–"
+        percentUsed.map { "\(Int($0.rounded()))\u{00A0}%" } ?? "–"
     }
 
     /// Returns the color of a share used: red from 95 %, orange from 80 %; nil below.

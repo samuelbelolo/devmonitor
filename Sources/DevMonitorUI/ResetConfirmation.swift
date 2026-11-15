@@ -23,7 +23,7 @@ struct ResetConfirmation: View {
                 Text(ResetStrings.left(after: usage.resetsLeft(on: kind) - 1)).foregroundStyle(.secondary)
                 if let ends = credit.endsAt { Text(ResetStrings.endsOn(ends)).foregroundStyle(.secondary) }
                 if !cleared.isEmpty, cleared.allSatisfy({ $0.percentUsed < Self.littleUsed }) {
-                    Text(ResetStrings.littleUsed).foregroundStyle(LimitTint.color(percentUsed: 85) ?? .orange)
+                    Text(ResetStrings.littleUsed(under: Int(Self.littleUsed))).foregroundStyle(LimitTint.color(percentUsed: 85) ?? .orange)
                 }
             }
             HStack {
