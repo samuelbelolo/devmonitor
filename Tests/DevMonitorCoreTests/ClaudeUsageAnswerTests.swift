@@ -54,6 +54,16 @@ final class ClaudeUsageAnswerTests: XCTestCase {
         XCTAssertEqual(read.fullest?.kind, .fiveHours)
     }
 
+    func testASessionLimitIsTheFiveHoursAndTheFiveHourKeyDoesNotRepeatIt() throws {
+        let fiveHour = #""five_hour": {"utilization": 100.0, "resets_at": "\#(reset)"}"#
+        let limits = #"[\#(limit("session", 100)), \#(limit("weekly_all", 26)), \#(limit("weekly_scoped", 16, model: "Fable"))]"#
+        let read = try usage(#"{\#(fiveHour), "limits": \#(limits)}"#)
+        XCTAssertEqual(read.limits.map(\.kind), [.fiveHours, .week, .weekOnModel("Fable")])
+        XCTAssertEqual(read.limits.map(\.percentUsed), [100, 26, 16])
+        let alone = try usage(#"{"five_hour": null, "limits": [\#(limit("session", 40))]}"#)
+        XCTAssertEqual(alone.limits.map(\.kind), [.fiveHours])
+    }
+
     func testALimitOfAnUnknownKindCountsTowardTheRoom() throws {
         let read = try usage(#"{"limits": [\#(limit("weekly_all", 20)), \#(limit("monthly_all", 70))]}"#)
         XCTAssertEqual(read.limits.map(\.kind), [.week, .other("monthly_all")])

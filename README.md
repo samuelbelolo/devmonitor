@@ -123,8 +123,8 @@ your sessions draw on most, and the share used of Codex's fullest limit:
 
 Its window lists, for each account:
 
-- one gauge per limit (the week, the week on Fable, Codex's windows), orange from 80 % and red
-  by 95 %, and when they start again;
+- one gauge per limit (the five hours when Claude reports them, the week, the week on Fable,
+  Codex's windows), orange from 80 % and red by 95 %, and when they start again;
 - a blue dot with the number of agent sessions on your Mac that draw on it;
 - a ticket with the number of free resets, beside the limit they start again. A click asks
   before using one.
