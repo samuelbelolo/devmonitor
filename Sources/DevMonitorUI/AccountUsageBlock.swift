@@ -32,6 +32,8 @@ struct AccountUsageBlock: View {
                 Text(UsageStrings.notReadYet).font(.system(size: 11)).foregroundStyle(.secondary)
             }
             resetPanel(reading)
+            // A block taller than its content keeps its footer at the bottom, level with the others of its row.
+            if fillsHeight { Spacer(minLength: 0) }
             footer(reading)
         }
         .padding(10)

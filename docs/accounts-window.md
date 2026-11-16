@@ -53,12 +53,14 @@ Each share turns orange from 80 % and red from 95 %.
 Each account has a block, in two columns from three accounts on: Claude's accounts first, the one
 with the most room first, then Codex's. An account's room is what is left of its fullest limit.
 
-- **One gauge per limit**, filled with the share already used: the week, and the week on one
-  model (Fable). Codex's limits are named by their length. A gauge turns a strong orange from
-  80 % and red by 95 %.
+- **One gauge per limit**, filled with the share already used: the five hours when Claude reports
+  them, the week, and the week on one model (Fable). Claude can report the five hours twice, as
+  its session limit and on their own: they show once. Codex's limits are named by their length.
+  A gauge turns a strong orange from 80 % and red by 95 %.
 - **When the limits start again**, once per account when they all start again at the same time,
   as a countdown.
-- **When it was read**. A block the last read could not renew stays greyed with its age.
+- **When it was read**, at the bottom left of the block, level with the other block of its row.
+  A block the last read could not renew stays greyed with its age.
 
 Every account is read every ten minutes, day and night, and again when the window opens if its
 last read is more than two minutes old. **↻** reads every account now. When a provider asks to
