@@ -15,13 +15,20 @@ public struct AgentVersionReport: Identifiable, Sendable {
 
     public var id: String { agent.rawValue }
     /// Returns the sessions running an older version than the one restarting them would load: the installed
-    /// command line tool, or for a session an editor extension runs, the newest version of that extension.
+    /// command line tool, for a session an editor extension runs, the newest version of that extension, and for a
+    /// session Zed runs through an ACP adapter, the newest adapter Zed downloaded (the path carries its version).
     /// @example report.sessionsToRestart(among: store.sessions(of: .claude)).count // 1
     public func sessionsToRestart(among sessions: [AgentSession], listing: (String) -> [String] = EditorExtension.directoryListing) -> [AgentSession] {
         sessions.filter { session in
             guard session.agent == agent, let running = session.version else { return false }
             let path = session.process.executablePath
-            let loaded = EditorExtension.contains(path) ? EditorExtension.newestVersion(of: path, listing: listing) : installed
+            let loaded = if ZedAgentRegistry.contains(path) {
+                ZedAgentRegistry.newestVersion(of: path, listing: listing)
+            } else if EditorExtension.contains(path) {
+                EditorExtension.newestVersion(of: path, listing: listing)
+            } else {
+                installed
+            }
             return loaded.map { running < $0 } == true
         }
     }
