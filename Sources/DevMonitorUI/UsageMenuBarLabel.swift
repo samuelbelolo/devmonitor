@@ -4,7 +4,8 @@ import SwiftUI
 
 /// The menu bar label of the accounts item: Claude's logo and the share used of the fullest limit of the Claude
 /// account most running sessions draw on, then Codex's logo and the share used of its fullest limit. Each part shows
-/// only when its provider has an account followed, and each share turns orange from 80 % and red from 95 %.
+/// only when its provider has an account followed, and each share turns orange from 80 % and red from 95 %. When every
+/// Claude account is full, Claude's share is followed by the wait until the first of them is usable again.
 public struct UsageMenuBarLabel: View {
     @EnvironmentObject private var usage: UsageStore
 
@@ -13,22 +14,29 @@ public struct UsageMenuBarLabel: View {
         let agent: Agent
         let text: String
         let tint: Color?
+        /// What follows the share in the menu bar's secondary color, such as the wait until an account is free.
+        var detail: String? = nil
     }
 
     public init() {}
 
     public var body: some View {
+        // A menu bar label shows only an image or a text, so the countdown ticks with the store's clock, not a timeline.
         Image(nsImage: UsageGlyph.image(for: Self.parts(followsClaude: usage.follows(.claude), claudePercent: usage.busiestClaudePercent,
-                                                         followsCodex: usage.follows(.codex), codexFullest: usage.codexFullest)))
+                                                         followsCodex: usage.follows(.codex), codexFullest: usage.codexFullest,
+                                                         claudeFreeIn: usage.claudeFreeAgainAt.map { $0.timeIntervalSince(usage.clock) })))
     }
 
     /// Returns the parts of the label: Claude's while a Claude account is followed or while nothing is, a "+" in the
-    /// latter case; Codex's while a Codex account is.
-    /// @example UsageMenuBarLabel.parts(followsClaude: true, claudePercent: 17, followsCodex: false, codexFullest: nil) // [Claude "17 %"]
-    static func parts(followsClaude: Bool, claudePercent: Double?, followsCodex: Bool, codexFullest: Double?) -> [Part] {
+    /// latter case; Codex's while a Codex account is. Claude's carries the wait, in seconds, until a Claude account is
+    /// free again when every one is full.
+    /// @example UsageMenuBarLabel.parts(followsClaude: true, claudePercent: 97, followsCodex: false, codexFullest: nil, claudeFreeIn: 6_120) // [Claude "97 %" "1 h 42 min"]
+    static func parts(followsClaude: Bool, claudePercent: Double?, followsCodex: Bool, codexFullest: Double?,
+                      claudeFreeIn: TimeInterval? = nil) -> [Part] {
         var parts: [Part] = []
         if followsClaude {
-            parts.append(Part(agent: .claude, text: text(percentUsed: claudePercent), tint: claudePercent.flatMap(tint(percentUsed:))))
+            parts.append(Part(agent: .claude, text: text(percentUsed: claudePercent), tint: claudePercent.flatMap(tint(percentUsed:)),
+                              detail: claudeFreeIn.map { UsageStrings.countdown(Int($0.rounded(.up))) }))
         } else if !followsCodex {
             parts.append(Part(agent: .claude, text: "+", tint: nil))
         }
@@ -66,10 +74,12 @@ enum UsageGlyph {
         let drawn = parts.map { part in
             (logo: AgentGlyph.image(for: [AgentGlyph.Logo(agent: part.agent, frame: 0, badge: false)]),
              text: part.text as NSString, tint: part.tint.map { NSColor($0) },
-             width: ceil((part.text as NSString).size(withAttributes: [.font: font]).width))
+             detail: part.detail.map { " · \($0)" as NSString },
+             width: ceil((part.text as NSString).size(withAttributes: [.font: font]).width),
+             detailWidth: part.detail.map { ceil((" · \($0)" as NSString).size(withAttributes: [.font: font]).width) } ?? 0)
         }
         let height = max(logoSize.height, ceil(font.ascender - font.descender))
-        let width = drawn.reduce(0) { $0 + logoSize.width + afterLogo + $1.width } + CGFloat(max(drawn.count - 1, 0)) * betweenParts
+        let width = drawn.reduce(0) { $0 + logoSize.width + afterLogo + $1.width + $1.detailWidth } + CGFloat(max(drawn.count - 1, 0)) * betweenParts
         let image = NSImage(size: NSSize(width: max(width, 1), height: height), flipped: false) { _ in
             var x: CGFloat = 0
             for part in drawn {
@@ -79,7 +89,10 @@ enum UsageGlyph {
                 // centred on the logos'.
                 part.text.draw(at: NSPoint(x: x, y: (height - font.capHeight) / 2 + font.descender),
                                withAttributes: [.font: font, .foregroundColor: part.tint ?? NSColor.labelColor])
-                x += part.width + betweenParts
+                x += part.width
+                part.detail?.draw(at: NSPoint(x: x, y: (height - font.capHeight) / 2 + font.descender),
+                                  withAttributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor])
+                x += part.detailWidth + betweenParts
             }
             return true
         }

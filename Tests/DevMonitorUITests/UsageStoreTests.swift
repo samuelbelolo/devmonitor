@@ -43,6 +43,8 @@ final class UsageStoreTests: XCTestCase {
         XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: true, claudePercent: nil, followsCodex: true, codexFullest: nil),
                        [Part(agent: .claude, text: "–", tint: nil), Part(agent: .codex, text: "–", tint: nil)])
         XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: false, claudePercent: nil, followsCodex: false, codexFullest: nil), [Part(agent: .claude, text: "+", tint: nil)])
+        XCTAssertEqual(UsageMenuBarLabel.parts(followsClaude: true, claudePercent: 97, followsCodex: false, codexFullest: nil, claudeFreeIn: 6_119.4),
+                       [Part(agent: .claude, text: "97\u{00A0}%", tint: Palette.orphan, detail: UsageStrings.countdown(6_120))])
         XCTAssertEqual(UsageMenuBarLabel.tint(percentUsed: 80), LimitTint.orange)
         XCTAssertNotNil(UsageMenuBarLabel.tint(percentUsed: 88))
         XCTAssertNotEqual(UsageMenuBarLabel.tint(percentUsed: 88), LimitTint.orange)

@@ -39,6 +39,9 @@ public final class UsageStore: ObservableObject {
     private let defaults: UserDefaults?
     private var loop: Task<Void, Never>?
     private var signInTask: Task<Void, Never>?
+    /// Moves on every 30 s so the menu bar's wait until a Claude account is free counts down between two reads.
+    @Published private(set) var clock = Date()
+    private var clockTask: Task<Void, Never>?
 
     /// Creates the app's store: reads the followed accounts now, then every ten minutes.
     /// @example UsageStore() // reading the accounts kept in the keychain
@@ -52,6 +55,12 @@ public final class UsageStore: ObservableObject {
             while !Task.isCancelled {
                 await self?.readAll(spread: true)
                 try? await Task.sleep(for: .seconds(Self.period))
+            }
+        }
+        clockTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                self?.clock = Date()
             }
         }
     }
@@ -123,6 +132,11 @@ public final class UsageStore: ObservableObject {
         let key = BusiestAccount.key(among: claude.map(\.id), sessions: runningSessions, percentUsed: percents,
                                      fallback: defaultAccount)
         return key.flatMap { percents[$0] }
+    }
+
+    /// When every Claude account followed is full, the soonest moment one of them is usable again; nil otherwise.
+    var claudeFreeAgainAt: Date? {
+        NextFreeAccount.date(of: accounts.filter { $0.account.provider == .claude }.map { reading(of: $0).usage })
     }
 
     /// Whether an account of this provider is followed.
