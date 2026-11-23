@@ -7,6 +7,7 @@ struct DevMonitorApp: App {
     @StateObject private var store = MonitorStore()
     @StateObject private var versions: VersionStore
     @StateObject private var extensions: ExtensionStore
+    @StateObject private var usage = UsageStore()
 
     /// Refuses to run as root: the monitor only ever lists and signals the user's own processes.
     /// @example DevMonitorApp() // exits with status 1 under sudo
@@ -20,7 +21,7 @@ struct DevMonitorApp: App {
         _extensions = StateObject(wrappedValue: ExtensionStore(versions: versions))
     }
 
-    // Items created later sit further left in the menu bar: memory first, then the agents.
+    // Items created later sit further left in the menu bar: memory first, then the agents, then the accounts.
     var body: some Scene {
         MenuBarExtra {
             MenuContentView().environmentObject(store)
@@ -29,9 +30,16 @@ struct DevMonitorApp: App {
         }
         .menuBarExtraStyle(.window)
         MenuBarExtra {
-            AgentsContentView().agentEnvironment(store: store, versions: versions, extensions: extensions)
+            AgentsContentView().agentEnvironment(store: store, versions: versions, extensions: extensions).environmentObject(usage)
         } label: {
             AgentMenuBarLabel().agentEnvironment(store: store, versions: versions, extensions: extensions)
+        }
+        .menuBarExtraStyle(.window)
+        // Only once an account is followed: until then, the agents window offers to follow one.
+        MenuBarExtra(isInserted: Binding(get: { usage.hasAccounts }, set: { _ in })) {
+            UsageContentView().usageEnvironment(usage: usage, sessionsFrom: store)
+        } label: {
+            UsageMenuBarLabel().usageEnvironment(usage: usage, sessionsFrom: store)
         }
         .menuBarExtraStyle(.window)
     }

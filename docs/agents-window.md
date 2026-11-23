@@ -8,6 +8,7 @@ says where they run, which ones are working, and which agent has an update you h
 - [The menu bar item](#the-menu-bar-item)
 - [Sessions by project](#sessions-by-project)
 - [Versions](#versions)
+- [Claude and Codex quotas](#claude-and-codex-quotas)
 - [Settings](#settings)
 - [Limits](#limits)
 
@@ -57,12 +58,18 @@ an agent's command. The latest versions are asked every 6 hours: see
 
 Below the versions, the window lists your [skills and plugins](extensions.md).
 
+## Claude and Codex quotas
+
+The last line of the window, **Claude and Codex quotas**, opens a button per provider to follow
+your accounts' limits. Once you follow one, a third menu bar item shows them: see
+[The accounts window](accounts-window.md).
+
 ## Settings
 
 The `…` menu of the window has two switches:
 
-- **Check for new versions**: turns off every network request of the app, for the agents and for
-  the skills.
+- **Check for new versions**: turns off the version checks, for the agents and for the skills.
+  The accounts you follow in the [accounts window](accounts-window.md) are read whatever it says.
 - **Animate the logo while an agent works**: each turn of the logo makes macOS redraw the menu
   bar item, about once a second. Turn it off for a still logo.
 

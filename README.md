@@ -13,14 +13,15 @@
 </p>
 
 <p align="center">
-  <a href="docs/media/demo.mp4"><img src="docs/media/demo.gif" width="960" alt="The demo: the memory window lists the projects with their memory, orphan servers are stopped in two clicks, then the agents window shows the sessions and the updates"></a>
+  <a href="docs/media/demo.mp4"><img src="docs/media/demo.gif" width="960" alt="The demo: the three menu bar items, the memory window where orphan servers are stopped in two clicks, the agents window copying an update, then the accounts window with the room left on each account and a free reset"></a>
 </p>
 
 <p align="center"><sub>The 23-second demo. Click it for the video with sound.</sub></p>
 
 DevMonitor is for people who run several projects and coding agents at once. One menu bar item
 shows the memory your projects hold and lets you stop what you forgot. A second one counts your
-agent sessions and tells you when an agent, a skill or a plugin has a new version.
+agent sessions and tells you when an agent, a skill or a plugin has a new version. A third one,
+once you follow your Claude and Codex accounts, shows how much of each subscription is left.
 
 <p align="center">
   <a href="#install">Install</a> ·
@@ -112,6 +113,26 @@ gives one command that updates everything, or one command per source (**Copy**).
 
 <br clear="right">
 
+### Every Claude and Codex account, and the room it has
+
+Follow your Claude and Codex accounts from the last line of the agents window, each with a
+sign-in of its own in your browser. A third item then shows the share used on the Claude account
+your sessions draw on most, and the share used of Codex's fullest limit:
+
+<img width="170" src="docs/media/menu-bar-accounts.png" alt="The accounts item: the Claude logo and 17 %, then the Codex logo and 55 %">
+
+Its window lists, for each account:
+
+- one gauge per limit (the five hours when Claude reports them, the week, the week on Fable,
+  Codex's windows), orange from 80 % and red by 95 %, and when they start again;
+- a blue dot with the number of agent sessions on your Mac that draw on it;
+- a ticket with the number of free resets, beside the limit they start again. A click asks
+  before using one.
+
+<p align="center"><img width="640" src="docs/media/accounts-window.png" alt="The accounts window: six accounts in two columns with their weekly and Fable limits, a blue dot and a session count on the accounts in use, and a ticket beside the limits that have a free reset"></p>
+
+[The accounts window, in detail →](docs/accounts-window.md)
+
 ## Guides
 
 | Guide | What is in it |
@@ -120,6 +141,7 @@ gives one command that updates everything, or one command per source (**Copy**).
 | [The memory window](docs/memory-window.md) | Reading the list, stopping services, the Swap line |
 | [The agents window](docs/agents-window.md) | Sessions, versions, the update commands, the settings |
 | [Skills and plugins](docs/extensions.md) | What is listed, when updates are looked for, the commands |
+| [The accounts window](docs/accounts-window.md) | Following Claude and Codex accounts, reading their limits, the accounts in use, free resets |
 | [Safety and privacy](docs/safety-and-privacy.md) | What DevMonitor never stops, what it reads, every request it makes |
 | [Development](docs/development.md) | Building, testing, the layout of the code, regenerating these images |
 
@@ -132,10 +154,12 @@ Each guide ends with the limits of what it describes.
 - It never touches apps, system processes, coding agent sessions or the shells you type in.
   MCP servers are never part of **Stop N idle**.
 - It runs as your user and refuses to run as root.
-- It reads your own processes' command lines on your Mac only, never shows the value of an
-  option, a `KEY=value` argument, a URL or a token, and stores nothing.
-- Its only network requests are the version checks, sent with no account or token. One switch
-  turns them off.
+- It reads your own processes' command lines on your Mac only, and never shows the value of an
+  option, a `KEY=value` argument, a URL or a token.
+- The version checks carry no account or token, and one switch turns them off.
+- The accounts you follow are read every ten minutes with their own sign-in, kept in your
+  keychain, through addresses the providers' own agents use and did not publish for other
+  programs. The only change DevMonitor makes on an account is spending a free reset you confirm.
 
 The full lists are in [Safety and privacy](docs/safety-and-privacy.md).
 

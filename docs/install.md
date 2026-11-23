@@ -59,6 +59,11 @@ repository's releases on GitHub (**Watch → Custom → Releases**).
 
 Untick **Launch at login**, choose **Quit** in the `…` menu, and delete the app.
 
+If you follow Claude or Codex accounts, remove each one from the `…` menu of its block first:
+that deletes its sign-in from your keychain. Once the app is deleted, the items left behind show
+in Keychain Access under the names `local.devmonitor.claude` and `local.devmonitor.codex`. The
+access you gave DevMonitor on each account ends by itself, after about four weeks for Claude.
+
 ## Common problems
 
 **The install stops and asks for developer tools.** Run `xcode-select --install`, wait for it

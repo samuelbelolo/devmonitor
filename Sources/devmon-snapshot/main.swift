@@ -25,7 +25,8 @@ func render(to path: String) async {
     // The store asked GitHub when it was created, during the wait above: this only reads the files again.
     await extensions.refresh(fetchingUpstream: false)
     let content: AnyView = showsAgents
-        ? AnyView(AgentsContentView().agentEnvironment(store: store, versions: versions, extensions: extensions))
+        // The accounts are never read here: a second program renewing their sign-ins would end the app's.
+        ? AnyView(AgentsContentView().agentEnvironment(store: store, versions: versions, extensions: extensions).environmentObject(UsageStore.placeholder()))
         : AnyView(MenuContentView().environmentObject(store))
     // Sized the way MenuBarExtra sizes its window: from the content's preferred size, not its fitting size.
     let controller = NSHostingController(rootView: content.background(Color(nsColor: .windowBackgroundColor)))
@@ -53,10 +54,33 @@ func renderSamples(into folder: String) async -> Bool {
     for (state, name) in [(SwapState.fine, "menu-bar"), (.high, "menu-bar-swap-high"), (.critical, "menu-bar-swap-critical")] {
         written = await WindowImage.write(SampleWindows.menuBar(swap: state), to: "\(folder)/\(name).png", cornerRadius: 8, margin: 14) && written
     }
+    written = await WindowImage.write(SampleUsage.window(), to: "\(folder)/accounts-window.png") && written
+    written = await WindowImage.write(SampleUsage.menuBar(), to: "\(folder)/menu-bar-accounts.png", cornerRadius: 8, margin: 14) && written
+    written = await WindowImage.write(SampleUsage.resetConfirmation(), to: "\(folder)/accounts-reset.png") && written
     return written
 }
 
 Task { @MainActor in
+    if arguments.first == "usage" {
+        // The accounts window, from made-up accounts, for review only: `make media` does not publish it.
+        // Variants: none (the window and its menu bar item), "confirm", "agents" (the entry closed), "entry" (opened),
+        // "reset" (the confirmation of a reset and the notes of a spend).
+        let path = arguments.dropFirst().first ?? "usage.png"
+        // An option such as -AppleLanguages is not a variant.
+        let variant = arguments.dropFirst(2).first.flatMap { $0.hasPrefix("-") ? nil : $0 }
+        let view: AnyView = switch variant {
+        case "confirm": AnyView(SampleUsage.window(confirming: true))
+        case "agents": AnyView(SampleWindows.agents())
+        case "entry": AnyView(SampleUsage.openEntry())
+        case "reset": AnyView(SampleUsage.resetPanels())
+        default: AnyView(SampleUsage.window())
+        }
+        var written = await WindowImage.write(view, to: path)
+        if variant == nil {
+            written = await WindowImage.write(SampleUsage.menuBar(), to: path.replacingOccurrences(of: ".png", with: "-menu-bar.png"), cornerRadius: 8, margin: 14) && written
+        }
+        exit(written ? 0 : 1)
+    }
     if arguments.first == "sample" {
         // The images are published in English, whatever the language of the Mac that renders them.
         guard AppLanguage.current == .english else {

@@ -37,6 +37,7 @@ public struct AgentsContentView: View {
                 AgentVersionRow(report: report, sessions: store.sessions(of: report.agent))
             }
             ExtensionsSection()
+            UsageEntry()
         }
         .font(.system(size: 12.5))
         .padding(14)
