@@ -59,15 +59,20 @@ public final class CallbackListener: @unchecked Sendable {
     /// @example try await listener.waitForCallback(timeout: 300)["code"] // "the-code"
     public func waitForCallback(timeout: TimeInterval) async throws -> [String: String] {
         queue.asyncAfter(deadline: .now() + timeout) { [weak self] in self?.deliver(.failure(SignInFlow.Failure.noAnswer)) }
-        return try await withCheckedThrowingContinuation { continuation in
-            lock.lock()
-            if let answer {
+        // A cancelled sign-in stops waiting at once, so its flow stops the listener and frees the port.
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                lock.lock()
+                if let answer {
+                    lock.unlock()
+                    continuation.resume(with: answer)
+                    return
+                }
+                waiters.append(continuation)
                 lock.unlock()
-                continuation.resume(with: answer)
-                return
             }
-            waiters.append(continuation)
-            lock.unlock()
+        } onCancel: { [weak self] in
+            self?.deliver(.failure(CancellationError()))
         }
     }
 

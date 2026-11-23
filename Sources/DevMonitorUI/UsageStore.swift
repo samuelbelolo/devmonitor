@@ -123,20 +123,25 @@ public final class UsageStore: ObservableObject {
         }.map(\.element)
     }
 
-    /// The share used of the fullest limit of the Claude account most running sessions draw on, or of the one a new
-    /// session would use when none runs: the menu bar's Claude figure. Nil when neither is followed or it was never
-    /// read.
-    var busiestClaudePercent: Double? {
+    /// The Claude account most running sessions draw on, or the one a new session would use when none runs: the
+    /// account the menu bar speaks of. Nil when neither is followed.
+    var busiestClaudeAccount: TrackedAccount? {
         let claude = accounts.filter { $0.account.provider == .claude }
         let percents = claude.reduce(into: [String: Double]()) { $0[$1.id] = reading(of: $1).usage?.fullest?.percentUsed }
         let key = BusiestAccount.key(among: claude.map(\.id), sessions: runningSessions, percentUsed: percents,
                                      fallback: defaultAccount)
-        return key.flatMap { percents[$0] }
+        return claude.first { $0.id == key }
     }
 
-    /// When every Claude account followed is full, the soonest moment one of them is usable again; nil otherwise.
+    /// The share used of the fullest limit of `busiestClaudeAccount`: the menu bar's Claude figure. Nil when there is
+    /// none or it was never read.
+    var busiestClaudePercent: Double? {
+        busiestClaudeAccount.flatMap { reading(of: $0).usage?.fullest?.percentUsed }
+    }
+
+    /// When `busiestClaudeAccount` is full, the moment it is usable again; nil otherwise, or once that moment has passed. Other accounts do not count.
     var claudeFreeAgainAt: Date? {
-        NextFreeAccount.date(of: accounts.filter { $0.account.provider == .claude }.map { reading(of: $0).usage })
+        busiestClaudeAccount.flatMap { AccountFreeAgain.date(of: reading(of: $0).usage, after: clock) }
     }
 
     /// Whether an account of this provider is followed.

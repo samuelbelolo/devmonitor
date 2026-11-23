@@ -63,7 +63,7 @@ enum UsageStrings {
     /// Returns why a sign-in to a provider's account did not go through.
     /// @example UsageStrings.failure(SignInFlow.Failure.noAnswer, provider: .claude) // "No authorization came back within 5 minutes. Try again."
     static func failure(_ error: Error, provider: Provider) -> String {
-        let company = provider == .claude ? "Anthropic" : "OpenAI"
+        let company = company(of: provider)
         return switch error as? SignInFlow.Failure {
         case .noAnswer: french ? "Aucune autorisation reçue en 5\u{00A0}minutes. Réessaie." : "No authorization came back within 5 minutes. Try again."
         case .stateMismatch: french ? "L'autorisation reçue ne correspond pas à cette demande. Réessaie." : "The authorization received does not match this request. Try again."
@@ -96,6 +96,14 @@ enum UsageStrings {
         return "\(Int((Double(seconds) / 3600).rounded()))\u{00A0}h"
     }
 
+    /// Returns the company that runs a provider's accounts.
+    /// @example UsageStrings.company(of: .codex) // "OpenAI"
+    static func company(of provider: Provider) -> String {
+        provider == .claude ? "Anthropic" : "OpenAI"
+    }
+
+    /// Returns the help of the blue dot: how many running sessions draw on the account.
+    /// @example UsageStrings.inUse(4) // "in use · 4 sessions"
     static func inUse(_ sessions: Int) -> String {
         let noun = sessions > 1 ? "sessions" : "session"
         return french ? "en cours · \(sessions)\u{00A0}\(noun)" : "in use · \(sessions)\u{00A0}\(noun)"
@@ -123,11 +131,12 @@ enum UsageStrings {
         french ? "lu il y a \(duration)" : "read \(duration) ago"
     }
 
-    /// Returns until when Anthropic asked to wait before reading again.
-    /// @example UsageStrings.throttled(until: date) // "Anthropic asked to wait until 4:40 PM."
-    static func throttled(until date: Date) -> String {
+    /// Returns until when the provider's company asked to wait before reading again.
+    /// @example UsageStrings.throttled(until: date, provider: .codex) // "OpenAI asked to wait until 4:40 PM."
+    static func throttled(until date: Date, provider: Provider) -> String {
         let time = date.formatted(.dateTime.hour().minute().locale(locale))
-        return french ? "Anthropic demande d'attendre jusqu'à \(time)." : "Anthropic asked to wait until \(time)."
+        let company = company(of: provider)
+        return french ? "\(company) demande d'attendre jusqu'à \(time)." : "\(company) asked to wait until \(time)."
     }
 
     /// Returns the day the sign-in ends, said ahead of time.

@@ -72,6 +72,27 @@ final class UsageStoreTests: XCTestCase {
         XCTAssertEqual(store.busiestClaudePercent, 61)
     }
 
+    func testTheMenuBarCountsDownOnlyWhenTheBusiestClaudeAccountIsFull() {
+        let store = SampleUsage.store()
+        XCTAssertNil(store.claudeFreeAgainAt)
+        store.noteSessions(["1-1": store.accounts[1].id])
+        XCTAssertEqual(store.claudeFreeAgainAt, store.reading(of: store.accounts[1]).usage?.fullest?.resetsAt)
+        XCTAssertNotNil(store.claudeFreeAgainAt)
+        store.noteSessions(["1-1": store.accounts[0].id])
+        XCTAssertNil(store.claudeFreeAgainAt)
+    }
+
+    func testTheMenuBarImageShowsTheWaitOfAFullAccount() {
+        XCTAssertNotNil(SampleUsage.menuBarStore().claudeFreeAgainAt)
+        XCTAssertEqual(SampleUsage.menuBarStore().busiestClaudePercent, 96)
+    }
+
+    func testAThrottledAccountNamesItsOwnProvider() {
+        let until = Date(timeIntervalSince1970: 1_000_000)
+        XCTAssertTrue(UsageStrings.throttled(until: until, provider: .codex).contains("OpenAI"))
+        XCTAssertTrue(UsageStrings.throttled(until: until, provider: .claude).contains("Anthropic"))
+    }
+
     func testRenamingAndRemovingChangeOnlyTheSampleStore() {
         let store = SampleUsage.store()
         let work = store.accounts[1]

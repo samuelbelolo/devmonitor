@@ -14,14 +14,23 @@ public enum SampleUsage {
     }
 
     /// Returns the menu bar item of the accounts, with the sample accounts.
-    /// @example SampleUsage.menuBar() // Claude's logo and "17 %", then Codex's and "55 %"
+    /// @example SampleUsage.menuBar() // Claude's logo, "96 %" and the wait until its reset, then Codex's and "55 %"
     public static func menuBar() -> some View {
         HStack(spacing: 5) { UsageMenuBarLabel() }
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.white)
             .padding(.horizontal, 14)
             .padding(.vertical, 5)
-            .environmentObject(store())
+            .environmentObject(menuBarStore())
+    }
+
+    /// Returns the sample store as the menu bar image shows it: running sessions on the account whose Fable limit is
+    /// full, so the label carries the wait until that limit resets.
+    /// @example SampleUsage.menuBarStore().busiestClaudePercent // 96
+    static func menuBarStore() -> UsageStore {
+        let store = store()
+        store.noteSessions(["1-1": store.accounts[1].id, "2-1": store.accounts[1].id])
+        return store
     }
 
     /// Returns the end of the agents window while no account is followed, its entry opened.

@@ -41,7 +41,8 @@ The item appears once you follow an account. It shows:
 - the Claude logo and the share used of the fullest limit of the Claude account most of your
   running sessions draw on, the fullest of them on a tie. With no session running, it is the
   account Claude Code is signed in with, the one your next session will use, and **–** when you
-  do not follow that account;
+  do not follow that account. When one of that account's limits is full, its share is followed
+  by the wait until it can be used again;
 - the Codex logo and the share used of Codex's fullest limit.
 
 Each share turns orange from 80 % and red from 95 %.

@@ -39,7 +39,7 @@ struct DevMonitorApp: App {
         MenuBarExtra(isInserted: Binding(get: { usage.hasAccounts }, set: { _ in })) {
             UsageContentView().usageEnvironment(usage: usage, sessionsFrom: store)
         } label: {
-            UsageMenuBarLabel().environmentObject(usage)
+            UsageMenuBarLabel().usageEnvironment(usage: usage, sessionsFrom: store)
         }
         .menuBarExtraStyle(.window)
     }

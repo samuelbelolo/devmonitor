@@ -4,8 +4,8 @@ import SwiftUI
 
 /// The menu bar label of the accounts item: Claude's logo and the share used of the fullest limit of the Claude
 /// account most running sessions draw on, then Codex's logo and the share used of its fullest limit. Each part shows
-/// only when its provider has an account followed, and each share turns orange from 80 % and red from 95 %. When every
-/// Claude account is full, Claude's share is followed by the wait until the first of them is usable again.
+/// only when its provider has an account followed, and each share turns orange from 80 % and red from 95 %. When that
+/// Claude account is full, Claude's share is followed by the wait until it is usable again.
 public struct UsageMenuBarLabel: View {
     @EnvironmentObject private var usage: UsageStore
 
@@ -28,8 +28,8 @@ public struct UsageMenuBarLabel: View {
     }
 
     /// Returns the parts of the label: Claude's while a Claude account is followed or while nothing is, a "+" in the
-    /// latter case; Codex's while a Codex account is. Claude's carries the wait, in seconds, until a Claude account is
-    /// free again when every one is full.
+    /// latter case; Codex's while a Codex account is. Claude's carries the wait, in seconds, until the Claude account shown
+    /// is free again when it is full.
     /// @example UsageMenuBarLabel.parts(followsClaude: true, claudePercent: 97, followsCodex: false, codexFullest: nil, claudeFreeIn: 6_120) // [Claude "97 %" "1 h 42 min"]
     static func parts(followsClaude: Bool, claudePercent: Double?, followsCodex: Bool, codexFullest: Double?,
                       claudeFreeIn: TimeInterval? = nil) -> [Part] {
@@ -68,7 +68,7 @@ enum UsageGlyph {
     private static let betweenParts: CGFloat = 9
 
     /// Returns the parts side by side, each its logo then its text.
-    /// @example UsageGlyph.image(for: [Part(agent: .claude, text: "2/3", tint: nil)]).size.width // 40
+    /// @example UsageGlyph.image(for: [Part(agent: .claude, text: "17 %", tint: nil)]).size.width // 40
     static func image(for parts: [UsageMenuBarLabel.Part]) -> NSImage {
         let font = NSFont.menuBarFont(ofSize: 0)
         let drawn = parts.map { part in
